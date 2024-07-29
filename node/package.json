@@ -1,0 +1,17 @@
+{
+    "name": "notificacoes-olimpiadas",
+    "version": "1.0.0",
+    "description": "Servidor para buscar noticias nas Olimpíadas 2024",
+    "main": "server.js",
+    "scripts": {
+      "start": "nodemon server.js"
+    },
+    "dependencies": {
+      "express": "^4.17.1",
+      "body-parser": "^1.19.0"
+    },
+    "devDependencies": {
+      "nodemon": "^2.0.15"
+    }
+  }
+  
