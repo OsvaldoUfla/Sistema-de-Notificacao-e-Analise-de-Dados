@@ -24,6 +24,17 @@ app.post('/upload', (req, res) => {
     });
 });
 
+// Nova rota GET para visualizar o conteúdo do arquivo
+app.get('/data', (req, res) => {
+    fs.readFile('received_data.txt', 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).send('Erro ao ler o dataset.');
+        }
+
+        res.send(data);
+    });
+});
+
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
 });

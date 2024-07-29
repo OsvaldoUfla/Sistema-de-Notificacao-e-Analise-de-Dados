@@ -1,23 +1,16 @@
-<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Formulário de Busca</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Dataset</title>
 </head>
 <body>
-    <h1>Buscar Medalhas</h1>
-    <form action="/search" method="POST">
-        <label for="term1">Termo 1:</label>
-        <input type="text" id="term1" name="term1" required>
-        <br>
-        <label for="term2">Termo 2:</label>
-        <input type="text" id="term2" name="term2" required>
-        <br>
-        <input type="submit" value="Buscar">
+    <h1>Upload Dataset</h1>
+    <form action="/upload" method="POST">
+        <label for="dataset">Dataset:</label><br>
+        <textarea id="dataset" name="dataset" rows="10" cols="50" placeholder="Insira seu dataset aqui..."></textarea><br><br>
+        <input type="submit" value="Enviar">
     </form>
-    <hr>
-    <h2>Resultados:</h2>
-    <div id="results"></div>
 </body>
 </html>
