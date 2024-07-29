@@ -35,6 +35,17 @@ app.get('/data', (req, res) => {
     });
 });
 
+// Rota para mostar que o servidor está rodando
+app.get('/', (req, res) => {
+    res.send('Servidor rodando.');
+}   );
+
+app.get('/scrape', (req, res) => {
+    res.get('https://python-server:5000/clean'); 
+    res.send('scrape feito'); 
+}   );
+
+
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
 });
