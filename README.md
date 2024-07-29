@@ -1,21 +1,21 @@
 # GCC129 - Sistemas Distribuídos - UFLA
 
-Este repositório contém o material de estudo, exemplos de código, exercícios e projetos desenvolvidos durante a disciplina de GCC129 - Sistemas Distribuídos na Universidade Federal de Lavras (UFLA).
+Este repositório contém o material e código-fonte do trabalho desenvolvido durante a disciplina de GCC129 - Sistemas Distribuídos na Universidade Federal de Lavras (UFLA).
 
 ## Conteúdo
 
-- **Aulas Teóricas:** Slides e anotações das aulas teóricas.
-- **Exemplos de Código:** Exemplos práticos de implementação de conceitos de sistemas distribuídos.
-- **Exercícios:** Listas de exercícios para praticar os conceitos aprendidos.
-- **Projetos:** Projetos desenvolvidos ao longo da disciplina para aplicar os conhecimentos de forma prática.
-- **Leituras Recomendadas:** Artigos e livros recomendados para aprofundar o conhecimento na área.
+- **Documentação do Projeto:** Descrição detalhada do projeto, objetivos e metodologia utilizada.
+- **Código-Fonte:** Implementação do projeto em [linguagem de programação utilizada].
+- **Instruções de Execução:** Passos para configurar e executar o projeto.
+- **Relatórios:** Relatórios de progresso e resultados obtidos durante o desenvolvimento do trabalho.
+- **Referências:** Artigos e livros utilizados como referência para o desenvolvimento do projeto.
 
-## Objetivos da Disciplina
+## Objetivos do Projeto
 
-- Entender os conceitos fundamentais de sistemas distribuídos.
-- Desenvolver habilidades para implementar e gerenciar sistemas distribuídos.
-- Explorar diferentes modelos de arquitetura e comunicação em sistemas distribuídos.
-- Analisar problemas comuns em sistemas distribuídos e suas soluções.
+- Aplicar os conceitos de sistemas distribuídos aprendidos na disciplina.
+- Desenvolver uma solução prática para um problema específico utilizando sistemas distribuídos.
+- Experimentar diferentes modelos de arquitetura e comunicação em sistemas distribuídos.
+- Analisar e resolver problemas comuns encontrados em sistemas distribuídos.
 
 ## Como Usar Este Repositório
 
@@ -23,8 +23,8 @@ Este repositório contém o material de estudo, exemplos de código, exercícios
     ```bash
     git clone https://github.com/seu-usuario/gcc129-sistemas-distribuidos.git
     ```
-2. **Navegue pelos diretórios** para encontrar o material de interesse.
-3. **Contribua** com suas soluções, melhorias ou sugestões através de pull requests.
+2. **Navegue pelos diretórios** para encontrar o material do projeto.
+3. **Siga as instruções** no arquivo `README.md` para configurar e executar o projeto.
 
 ## Contribuições
 
