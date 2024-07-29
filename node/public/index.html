@@ -1,16 +1,23 @@
+<!-- public/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Busca de Medalhas</title>
+    <meta charset="UTF-8">
+    <title>Formulário de Busca</title>
 </head>
 <body>
-    <h1>Busca de Medalhas nas Olimpíadas 2024</h1>
+    <h1>Buscar Medalhas</h1>
     <form action="/search" method="POST">
         <label for="term1">Termo 1:</label>
-        <input type="text" id="term1" name="term1" required><br><br>
+        <input type="text" id="term1" name="term1" required>
+        <br>
         <label for="term2">Termo 2:</label>
-        <input type="text" id="term2" name="term2" required><br><br>
-        <button type="submit">Buscar</button>
+        <input type="text" id="term2" name="term2" required>
+        <br>
+        <input type="submit" value="Buscar">
     </form>
+    <hr>
+    <h2>Resultados:</h2>
+    <div id="results"></div>
 </body>
 </html>

@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
-import os
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
@@ -10,27 +9,29 @@ def clean_data():
     term1 = request.args.get('term1')
     term2 = request.args.get('term2')
 
-    # URL do site de notícias
+    if not term1 or not term2:
+        return "Os parâmetros 'term1' e 'term2' são obrigatórios.", 400
+
     url = "https://ge.globo.com/olimpiadas/"
 
-    # Fazer a requisição HTTP para obter o conteúdo da página
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
 
-    # Extrair manchetes que mencionam os termos de busca
-    headlines = soup.find_all('h2')  # Ajuste o seletor conforme necessário
-    new_medals = []
+        soup = BeautifulSoup(response.content, 'html.parser')
+        headlines = soup.find_all('h2')
 
-    for headline in headlines:
-        text = headline.get_text()
-        if term1 in text and term2 in text:
-            new_medals.append(text)
+        filtered_headlines = []
+        for headline in headlines:
+            text = headline.get_text()
+            if text and term1 in text and term2 in text:
+                filtered_headlines.append(text)
 
-    # Exibir as manchetes encontradas
-    if new_medals:
-        return jsonify({"new_medals": new_medals})
-    else:
-        return jsonify({"message": "Nenhuma nova noticia encontrada."})
+        # Enviar os resultados como texto
+        return '\n'.join(filtered_headlines) or "Nenhuma nova medalha encontrada."
+
+    except requests.RequestException as e:
+        return f"Erro na requisição HTTP: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
