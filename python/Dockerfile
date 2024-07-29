@@ -16,6 +16,9 @@ WORKDIR /app
 # Copiar código do aplicativo
 COPY . .
 
+# tornar o script de scraping executável
+RUN chmod +x scrape.sh
+
 # Expor a porta em que o servidor estará ouvindo
 EXPOSE 5000
 
