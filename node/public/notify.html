@@ -1,44 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Evento</title>
     <link rel="stylesheet" href="/styles.css">
-    <style>
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 20px;
-        }
-        .checkbox-group label {
-            margin-bottom: 10px;
-        }
-        .checkbox-group input[type="checkbox"] {
-            margin-right: 10px;
-        }
-    </style>
 </head>
 <body>
     <h1>Cadastro de Evento de Notificação</h1>
+
+    <p>Preencha o formulário abaixo para cadastrar um evento de notificação. Sempre que qualquer país ganhar uma nova medalha, você receberá uma notificação de acordo com o tipo de notificação escolhido.</p>
+    <p>Escolha o tipo de notificação que deseja receber (Telegram ou Email) e forneça os detalhes necessários (ID do Telegram ou Email). Assim, você será informado sobre as conquistas dos países durante as Olimpíadas.</p>
+
     <form id="eventForm">
-        <fieldset class="checkbox-group">
-            <legend>Países:</legend>
-            <label><input type="checkbox" name="countries" value="USA"> EUA</label>
-            <label><input type="checkbox" name="countries" value="BRA"> Brasil</label>
-            <label><input type="checkbox" name="countries" value="CHN"> China</label>
-            <label><input type="checkbox" name="countries" value="GBR"> Reino Unido</label>
-            <label><input type="checkbox" name="countries" value="JPN"> Japão</label>
-            <label><input type="checkbox" name="countries" value="GER"> Alemanha</label>
-        </fieldset>
-
-        <fieldset class="checkbox-group">
-            <legend>Tipos de Medalha:</legend>
-            <label><input type="checkbox" name="medalTypes" value="gold"> Ouro</label>
-            <label><input type="checkbox" name="medalTypes" value="silver"> Prata</label>
-            <label><input type="checkbox" name="medalTypes" value="bronze"> Bronze</label>
-        </fieldset>
-
         <label for="notificationType">Tipo de Notificação:</label>
         <select id="notificationType" name="notificationType" required>
             <option value="telegram">Telegram</option>
@@ -56,8 +30,6 @@
             event.preventDefault();
             const formData = new FormData(event.target);
             const data = {
-                countries: formData.getAll('countries'),
-                medalTypes: formData.getAll('medalTypes'),
                 notificationType: formData.get('notificationType'),
                 notificationDetail: formData.get('notificationDetail')
             };

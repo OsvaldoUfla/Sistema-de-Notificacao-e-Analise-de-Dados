@@ -3,12 +3,30 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const port = 3000;
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Caminho do arquivo JSON para armazenar eventos
+const eventsFilePath = path.join(__dirname, 'events.json');
+
+// Função para carregar eventos do arquivo JSON
+function loadEvents() {
+    if (fs.existsSync(eventsFilePath)) {
+        const data = fs.readFileSync(eventsFilePath, 'utf-8');
+        return JSON.parse(data);
+    }
+    return [];
+}
+
+// Função para salvar eventos no arquivo JSON
+function saveEvents(events) {
+    fs.writeFileSync(eventsFilePath, JSON.stringify(events, null, 2), 'utf-8');
+}
 
 // Rota para a página inicial
 app.get('/', (req, res) => {
@@ -20,54 +38,102 @@ app.get('/notify', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/notify.html'));
 });
 
-// Simulação de banco de dados
-let events = [];
-
 // Endpoint para cadastro de eventos
 app.post('/api/events', (req, res) => {
-    const { countries, medalTypes, notificationType, notificationDetail } = req.body;
-    countries.forEach(country => {
-        medalTypes.forEach(medalType => {
-            const newEvent = { country, medalType, notificationType, notificationDetail };
-            events.push(newEvent);
-        });
-    });
+    const { notificationType, notificationDetail } = req.body;
+    const events = loadEvents(); // Carregar eventos do arquivo
+    const newEvent = { notificationType, notificationDetail };
+    events.push(newEvent);
+    saveEvents(events); // Salvar eventos atualizados no arquivo
     res.status(201).send('Evento cadastrado com sucesso!');
 });
 
+async function sendNotification(event, message) {
+    if (event.notificationType === 'telegram') {
+        await sendTelegramNotification(event.notificationDetail, message);
+    } else if (event.notificationType === 'email') {
+        //await sendEmailNotification(event.notificationDetail, message);
+    }
+}
+
 // Função para enviar notificação via Telegram
 async function sendTelegramNotification(chatId, message) {
-    const botToken = 'YOUR_TELEGRAM_BOT_TOKEN';
+    const botToken = '7272754204:AAF0ji1kZD9Yrv7ZLEc0dAn1j9zsLqqGmko'; // Substitua pelo token real do seu bot
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    await axios.post(url, {
-        chat_id: chatId,
-        text: message
-    });
+
+    try {
+        await axios.post(url, {
+            chat_id: chatId,
+            text: message
+        });
+        console.log('Mensagem enviada com sucesso!');
+    } catch (error) {
+        console.error('Erro ao enviar mensagem pelo Telegram:', error);
+    }
 }
 
-// Função para enviar notificação por email (exemplo básico)
+// Função para enviar notificação por email
 async function sendEmailNotification(email, message) {
-    // Integrar com serviço de envio de email (como nodemailer)
-    console.log(`Enviando email para ${email}: ${message}`);
-}
-
-// Função para monitorar eventos e enviar notificações
-function checkForMedalUpdates() {
-    // Implementar lógica para verificar atualizações no quadro de medalhas
-    // Para cada atualização, verificar eventos e enviar notificações correspondentes
-    events.forEach(async event => {
-        // Lógica para verificar se o evento ocorreu
-        const message = `O país ${event.country} ganhou mais uma medalha de ${event.medalType}!`;
-        if (event.notificationType === 'telegram') {
-            await sendTelegramNotification(event.notificationDetail, message);
-        } else if (event.notificationType === 'email') {
-            await sendEmailNotification(event.notificationDetail, message);
+    // Configuração do transporte de email
+    const transporter = nodemailer.createTransport({
+        service: 'Gmail', // Você pode usar outros serviços de email
+        auth: {
+            user: 'osvaldosanca8@gmail.com', // Seu email
+            pass: 'nEgGnkxdVh98sX'   // Sua senha
         }
     });
+
+    // Configuração do email
+    const mailOptions = {
+        from: 'osvaldosanca8@gmail.com',  // Seu email
+        to: email,                     // Destinatário
+        subject: 'Nova Medalha Ganha!',
+        text: message
+    };
+
+    try {
+        // Enviar o email
+        await transporter.sendMail(mailOptions);
+        console.log(`Email enviado para ${email}: ${message}`);
+    } catch (error) {
+        console.error('Erro ao enviar email:', error);
+    }
 }
 
-// Simular monitoramento de medalhas a cada 5 minutos
-setInterval(checkForMedalUpdates, 300000);
+async function getMedalData() { 
+    const tally = processCsv(path.join(__dirname, 'uploads', 'downloaded.csv'));
+    return tally;
+}
+
+async function checkForMedalUpdates() {
+    try {
+        const oldTally = await getMedalData(); // Obter dados antigos do quadro de medalhas
+        // Realizar o scrape dos dados
+        await scrape();
+        await downloadCsv(); // Baixar o arquivo CSV atualizado
+        const newTally = await getMedalData(); // Obter dados atualizados do quadro de medalhas
+
+        for (let country in newTally) {
+            const newMedals = newTally[country];
+            const oldMedals = oldTally[country] || { gold: 0, silver: 0, bronze: 0 };
+
+            // Verifica se o país ganhou novas medalhas
+            if (newMedals.gold > oldMedals.gold || newMedals.silver > oldMedals.silver || newMedals.bronze > oldMedals.bronze) {
+                const message = `${newMedals.country} ganhou uma nova medalha!`; // Mensagem de notificação
+                console.log(`${newMedals.country} ganhou uma nova medalha!`);
+
+                const events = await loadEvents(); // Carregar eventos do arquivo
+                for (const event of events) {
+                    await sendNotification(event, message); // Enviar notificação para cada evento
+                }
+            }
+        }
+        
+    } catch (err) {
+        console.error('Erro ao atualizar o quadro de medalhas:', err);
+    }
+}
+
 
 // Função para processar o arquivo CSV e enviar os dados para o cliente
 async function processCsv(filePath) {
@@ -90,17 +156,18 @@ async function processCsv(filePath) {
     }
 }
 
-
 // Rota para baixar o arquivo CSV do servidor Python e enviar os dados
 app.get('/data', async (req, res) => {
-    scrape(); // Realizar o scrape dos dados
-    const csvUrl = 'http://python-server:5000/download_csv'; // URL para o CSV
-
     try {
-        // Fazer o download do arquivo CSV
+        // Verificar se houve atualização no quadro de medalhas
+        await checkForMedalUpdates();
+
+        // Fazer o download do CSV atualizado
+        const csvUrl = 'http://python-server:5000/download_csv'; // URL do servidor Python para o CSV
         const response = await axios.get(csvUrl, { responseType: 'stream' });
         const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
         const writer = fs.createWriteStream(filePath);
+
         response.data.pipe(writer);
 
         writer.on('finish', async () => {
@@ -116,9 +183,26 @@ app.get('/data', async (req, res) => {
             res.status(500).send(`Erro ao salvar o arquivo CSV: ${err.message}`);
         });
     } catch (error) {
-        res.status(500).send('Erro ao baixar o arquivo CSV.');
+        res.status(500).send(`Erro ao baixar o arquivo CSV: ${error.message}`);
     }
 });
+
+// Função para realizar o download do arquivo CSV
+async function downloadCsv() {
+    try {
+        const response = await axios.get('http://python-server:5000/download_csv', { responseType: 'stream' });
+        const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
+        const writer = fs.createWriteStream(filePath);
+
+        return new Promise((resolve, reject) => {
+            response.data.pipe(writer);
+            writer.on('finish', resolve); // Resolva a Promise quando a escrita estiver concluída
+            writer.on('error', reject);   // Rejeite a Promise em caso de erro
+        });
+    } catch (err) {
+        throw new Error(`Erro ao realizar o download do arquivo CSV: ${err.message}`);
+    }
+}
 
 // Função para realizar o scrape
 function scrape(){
@@ -129,6 +213,10 @@ function scrape(){
         return error;
     }
 }
+
+// Simular monitoramento de medalhas a cada 5 minutos
+//setInterval(checkForMedalUpdates, 300000);
+setInterval(checkForMedalUpdates, 25000);
 
 // Iniciar o servidor
 app.listen(port, () => {
