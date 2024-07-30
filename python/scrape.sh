@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # URL do site a ser raspado
-URL="https://ge.globo.com/olimpiadas/"
+URL="https://ge.globo.com/olimpiadas/quadro-de-medalhas-olimpiadas-paris-2024/"
 
 # Nome do arquivo onde os dados serão salvos
 OUTPUT_FILE="data.html"

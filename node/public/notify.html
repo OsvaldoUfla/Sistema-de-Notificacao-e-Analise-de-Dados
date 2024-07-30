@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Evento</title>
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+        .checkbox-group label {
+            margin-bottom: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cadastro de Evento de Notificação</h1>
+    <form id="eventForm">
+        <fieldset class="checkbox-group">
+            <legend>Países:</legend>
+            <label><input type="checkbox" name="countries" value="USA"> EUA</label>
+            <label><input type="checkbox" name="countries" value="BRA"> Brasil</label>
+            <label><input type="checkbox" name="countries" value="CHN"> China</label>
+            <label><input type="checkbox" name="countries" value="GBR"> Reino Unido</label>
+            <label><input type="checkbox" name="countries" value="JPN"> Japão</label>
+            <label><input type="checkbox" name="countries" value="GER"> Alemanha</label>
+        </fieldset>
+
+        <fieldset class="checkbox-group">
+            <legend>Tipos de Medalha:</legend>
+            <label><input type="checkbox" name="medalTypes" value="gold"> Ouro</label>
+            <label><input type="checkbox" name="medalTypes" value="silver"> Prata</label>
+            <label><input type="checkbox" name="medalTypes" value="bronze"> Bronze</label>
+        </fieldset>
+
+        <label for="notificationType">Tipo de Notificação:</label>
+        <select id="notificationType" name="notificationType" required>
+            <option value="telegram">Telegram</option>
+            <option value="email">Email</option>
+        </select>
+
+        <label for="notificationDetail">Detalhes de Notificação:</label>
+        <input type="text" id="notificationDetail" name="notificationDetail" placeholder="ID do Telegram ou Email" required>
+
+        <button type="submit">Cadastrar</button>
+    </form>
+
+    <script>
+        document.getElementById('eventForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = {
+                countries: formData.getAll('countries'),
+                medalTypes: formData.getAll('medalTypes'),
+                notificationType: formData.get('notificationType'),
+                notificationDetail: formData.get('notificationDetail')
+            };
+            try {
+                const response = await fetch('/api/events', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    alert('Evento cadastrado com sucesso!');
+                } else {
+                    alert('Erro ao cadastrar evento.');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao cadastrar evento.');
+            }
+        });
+    </script>
+</body>
+</html>

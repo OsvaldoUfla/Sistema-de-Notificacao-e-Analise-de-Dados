@@ -1,57 +1,106 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file, make_response
 import subprocess
-import requests
+import csv
 from bs4 import BeautifulSoup
+import os
 
 app = Flask(__name__)
 
-@app.route('/clean', methods=['GET'])
-def clean_data():
-    term1 = request.args.get('term1')
-    term2 = request.args.get('term2')
-
-    if not term1 or not term2:
-        return "Os parâmetros 'term1' e 'term2' são obrigatórios.", 400
-
+# http://python-server:5000/scrape
+# Rota para realizar o scraping dos dados
+@app.route('/scrape', methods=['GET'])
+def scrape_data():
     # Executar o script Bash para fazer o download dos dados
     try:
         subprocess.run(['./scrape.sh'], check=True)
     except subprocess.CalledProcessError as e:
         return f"Erro ao executar o script Bash: {str(e)}", 500
 
-    # Realizar data cleaning no arquivo baixado
+    # Extraia e salve os dados
+    try:
+        medal_data = extract_medal_data()
+        if not medal_data:
+            return "Nenhum dado encontrado.", 404
+        else:
+            save_medal_data(medal_data)
+            response = make_response("csv Salvo!", 200)  
+            return  response
+    except Exception as e:
+        return f"Erro ao processar os dados: {str(e)}", 500
+
+
+
+# http://python-server:5000/download_csv
+# Rota para download do arquivo CSV    
+@app.route('/download_csv', methods=['GET'])    
+def download_csv():
+    # Verificar se o arquivo CSV existe
+    if not os.path.exists('medal_data.csv'):
+        return "Arquivo CSV não encontrado.", 404
+
+    # Enviar o arquivo CSV
+    return send_file('medal_data.csv', as_attachment=True)
+
+# função para salvar os dados em um arquivo CSV
+def save_medal_data(medal_data):
+    # Salvar os dados em um arquivo CSV
+    try:
+        with open('medal_data.csv', 'w', newline='', encoding='utf-8') as file:
+            writer = csv.DictWriter(file, fieldnames=['Posicao', 'Country', 'Gold', 'Silver', 'Bronze', 'Total'])
+            writer.writeheader()
+            writer.writerows(medal_data)
+    except Exception as e:
+        raise RuntimeError(f"Erro ao salvar o arquivo CSV: {str(e)}")
+
+# função para extrair os dados da tabela HTML
+def extract_medal_data():
+    # Inicialize medal_data para garantir que ela sempre tenha um valor
+    medal_data = []
+
+    # Abrir e ler o conteúdo do arquivo HTML
     try:
         with open('data.html', 'r', encoding='utf-8') as file:
-            content = file.read()
+            html_content = file.read()
+    except FileNotFoundError:
+        print("Arquivo 'data.html' não encontrado.")
+        return medal_data
 
-        soup = BeautifulSoup(content, 'html.parser')
-        headlines = soup.find_all('h2')
+    # Parse o HTML com BeautifulSoup
+    soup = BeautifulSoup(html_content, 'html.parser')
 
-        filtered_headlines = []
-        for headline in headlines:
-            text = headline.get_text()
-            if text and term1 in text and term2 in text:
-                filtered_headlines.append(text)
+    # Encontre a tabela
+    table = soup.find('table', {'aria-label': 'Quadro de medalhas Olimpíadas Paris 2024. Lista com 5 países.'})
 
-        # Salvar os resultados em um arquivo
-        with open('cleaned_data.txt', 'w', encoding='utf-8') as file:
-            for line in filtered_headlines:
-                file.write(f"{line}\n")
+    # Verifique se a tabela foi encontrada
+    if table is None:
+        print("Tabela não encontrada.")
+        return medal_data
 
-        # Enviar o dataset para o servidor Node.js
-        with open('cleaned_data.txt', 'r', encoding='utf-8') as file:
-            dataset = file.read()
+    # Extraia as linhas da tabela
+    rows = table.find_all('tr')
 
-        node_server_url = 'http://node-server:3000/upload'  # Ajuste o URL conforme necessário
-        response = requests.post(node_server_url, data={'dataset': dataset})
-
-        if response.status_code == 200:
-            return 'Data cleaning concluído e dados enviados para o servidor Node.js.', 200
-        else:
-            return f"Erro ao enviar dados para o servidor Node.js: {response.text}", 500
-
-    except Exception as e:
-        return f"Erro durante o processamento: {str(e)}", 500
+    # Itere sobre as linhas e extraia dados
+    for row in rows:
+        # Verifique se a linha possui os dados esperados
+        cells = row.find_all('td')
+        if len(cells) >= 6:
+            country_Pos = cells[0].get_text(strip=True)
+            country_name = cells[1].get_text(strip=True)
+            gold_medals = cells[2].get_text(strip=True)
+            silver_medals = cells[3].get_text(strip=True)
+            bronze_medals = cells[4].get_text(strip=True)
+            total_medals = cells[5].get_text(strip=True)
+            
+            medal_data.append({
+                'Posicao': country_Pos,
+                'Country': country_name,
+                'Gold': gold_medals,
+                'Silver': silver_medals,
+                'Bronze': bronze_medals,
+                'Total': total_medals
+            })
+    
+    return medal_data
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

@@ -6,6 +6,8 @@ WORKDIR /app
 
 # Copiar package.json e instalar dependências
 COPY package*.json ./
+
+# Instala as dependências do projeto
 RUN npm install
 
 # Expor a porta em que o servidor estará ouvindo

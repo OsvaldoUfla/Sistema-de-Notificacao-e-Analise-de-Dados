@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     curl
 
 # Instalar BeautifulSoup e outras dependências
-RUN pip3 install requests beautifulsoup4 flask
+RUN pip3 install requests beautifulsoup4 flask make_response
 
 # Criar diretório de trabalho
 WORKDIR /app

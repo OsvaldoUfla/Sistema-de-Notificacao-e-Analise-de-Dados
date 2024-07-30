@@ -1,16 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Dataset</title>
+    <title>Gráfico de Medalhas</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        #charts {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        svg {
+            border: 1px solid #ddd;
+            background-color: #fff;
+        }
+        .bar.gold { fill: gold; }
+        .bar.silver { fill: silver; }
+        .bar.bronze { fill: #cd7f32; }
+        .bar.total { fill: lightgray; }
+        .axis-label { font-size: 12px; }
+        .axis--x .tick text {
+            text-anchor: end;
+            transform: rotate(-40deg);
+            font-size: 10px;
+        }
+        .button-container {
+            margin: 20px;
+        }
+        .notify-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .notify-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h1>Upload Dataset</h1>
-    <form action="/upload" method="POST">
-        <label for="dataset">Dataset:</label><br>
-        <textarea id="dataset" name="dataset" rows="10" cols="50" placeholder="Insira seu dataset aqui..."></textarea><br><br>
-        <input type="submit" value="Enviar">
-    </form>
+    <h1>Gráfico de Medalhas por País</h1>
+    <div class="button-container">
+        <a href="/notify" class="notify-button">Cadastro de Evento de Notificação</a>
+    </div>
+    <div id="charts">
+        <svg id="gold-chart" width="800" height="400"></svg>
+        <svg id="silver-chart" width="800" height="400"></svg>
+        <svg id="bronze-chart" width="800" height="400"></svg>
+        <svg id="total-chart" width="800" height="400"></svg>
+    </div>
+
+    <script>
+        fetch('/data')
+            .then(response => response.json())
+            .then(data => {
+                // Função para criar gráfico
+                function createChart(data, elementId, yValue, barClass, yLabel) {
+                    const svg = d3.select(elementId);
+                    const margin = { top: 20, right: 20, bottom: 80, left: 50 };
+                    const width = +svg.attr("width") - margin.left - margin.right;
+                    const height = +svg.attr("height") - margin.top - margin.bottom;
+                    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+                    const x = d3.scaleBand()
+                        .rangeRound([0, width])
+                        .padding(0.1)
+                        .domain(data.map(d => d.country));
+
+                    const y = d3.scaleLinear()
+                        .rangeRound([height, 0])
+                        .domain([0, d3.max(data, d => d[yValue])]);
+
+                    g.append("g")
+                        .attr("class", "axis axis--x")
+                        .attr("transform", `translate(0,${height})`)
+                        .call(d3.axisBottom(x))
+                        .selectAll("text")
+                        .attr("transform", "rotate(-40)")
+                        .style("text-anchor", "end")
+                        .style("font-size", "10px");
+
+                    g.append("g")
+                        .attr("class", "axis axis--y")
+                        .call(d3.axisLeft(y).ticks(10))
+                        .append("text")
+                        .attr("class", "axis-label")
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", -40)
+                        .attr("x", -height / 2)
+                        .attr("dy", "0.71em")
+                        .attr("text-anchor", "middle")
+                        .text(yLabel);
+
+                    g.selectAll(".bar")
+                        .data(data)
+                        .enter().append("rect")
+                        .attr("class", `bar ${barClass}`)
+                        .attr("x", d => x(d.country))
+                        .attr("y", d => y(d[yValue]))
+                        .attr("width", x.bandwidth())
+                        .attr("height", d => height - y(d[yValue]));
+                }
+
+                // Criar gráficos para ouro, prata, bronze e total
+                createChart(data, "#gold-chart", "gold", "gold", "Medalhas de Ouro");
+                createChart(data, "#silver-chart", "silver", "silver", "Medalhas de Prata");
+                createChart(data, "#bronze-chart", "bronze", "bronze", "Medalhas de Bronze");
+                createChart(data, "#total-chart", "total", "total", "Total de Medalhas");
+            });
+    </script>
 </body>
 </html>
