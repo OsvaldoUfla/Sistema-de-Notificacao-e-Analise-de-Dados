@@ -21,7 +21,7 @@ Este repositório contém o material e código-fonte do trabalho desenvolvido du
 
 1. **Clone o repositório:**
     ```bash
-    git clone https://github.com/seu-usuario/gcc129-sistemas-distribuidos.git
+    git clone https://github.com/OsvaldoUfla/Trabalho---Sistemas-Distribuidos-UFLA.git
     ```
 2. **Navegue pelos diretórios** para encontrar o material do projeto.
 3. **Siga as instruções** no arquivo `README.md` para configurar e executar o projeto.
