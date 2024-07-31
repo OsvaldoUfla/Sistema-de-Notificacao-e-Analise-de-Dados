@@ -4,12 +4,9 @@
 URL="https://ge.globo.com/olimpiadas/quadro-de-medalhas-olimpiadas-paris-2024/"
 
 # Nome do arquivo onde os dados serão salvos
-OUTPUT_FILE="data1.html"
+OUTPUT_FILE="data.html"
 
 # Usando curl para fazer o download do conteúdo da página
-if curl -s "$URL" -o "$OUTPUT_FILE"; then
-    echo "Scraping concluído. Dados salvos em $OUTPUT_FILE."
-else
-    echo "Erro ao realizar o scraping. Verifique a URL e tente novamente."
-    exit 1
-fi
+curl -s "$URL" -o "$OUTPUT_FILE"
+
+echo "Scraping concluído. Dados salvos em $OUTPUT_FILE."
