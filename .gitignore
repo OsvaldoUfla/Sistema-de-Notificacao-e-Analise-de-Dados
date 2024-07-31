@@ -1,0 +1,29 @@
+# Ignorar arquivos e pastas relacionados ao ambiente
+.env/
+.env.*
+
+# Ignorar diretórios node_modules e log
+node_modules/
+logs/
+*.log
+
+# Ignorar pacotes de lockfiles de pacotes
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignorar diretórios de builds e arquivos temporários
+build/
+dist/
+tmp/
+temp/
+out/
+uploads/
+
+# Ignorar arquivos de sistema e do editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
