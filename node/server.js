@@ -3,7 +3,6 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
-const nodemailer = require('nodemailer');
 
 const app = express();
 const port = 3000;
@@ -48,14 +47,6 @@ app.post('/api/events', (req, res) => {
     res.status(201).send('Evento cadastrado com sucesso!');
 });
 
-async function sendNotification(event, message) {
-    if (event.notificationType === 'telegram') {
-        await sendTelegramNotification(event.notificationDetail, message);
-    } else if (event.notificationType === 'email') {
-        //await sendEmailNotification(event.notificationDetail, message);
-    }
-}
-
 // Função para enviar notificação via Telegram
 async function sendTelegramNotification(chatId, message) {
     const botToken = '7272754204:AAF0ji1kZD9Yrv7ZLEc0dAn1j9zsLqqGmko'; // Substitua pelo token real do seu bot
@@ -69,34 +60,6 @@ async function sendTelegramNotification(chatId, message) {
         console.log('Mensagem enviada com sucesso!');
     } catch (error) {
         console.error('Erro ao enviar mensagem pelo Telegram:', error);
-    }
-}
-
-// Função para enviar notificação por email
-async function sendEmailNotification(email, message) {
-    // Configuração do transporte de email
-    const transporter = nodemailer.createTransport({
-        service: 'Gmail', // Você pode usar outros serviços de email
-        auth: {
-            user: 'osvaldosanca8@gmail.com', // Seu email
-            pass: 'nEgGnkxdVh98sX'   // Sua senha
-        }
-    });
-
-    // Configuração do email
-    const mailOptions = {
-        from: 'osvaldosanca8@gmail.com',  // Seu email
-        to: email,                     // Destinatário
-        subject: 'Nova Medalha Ganha!',
-        text: message
-    };
-
-    try {
-        // Enviar o email
-        await transporter.sendMail(mailOptions);
-        console.log(`Email enviado para ${email}: ${message}`);
-    } catch (error) {
-        console.error('Erro ao enviar email:', error);
     }
 }
 
@@ -124,7 +87,7 @@ async function checkForMedalUpdates() {
 
                 const events = await loadEvents(); // Carregar eventos do arquivo
                 for (const event of events) {
-                    await sendNotification(event, message); // Enviar notificação para cada evento
+                    await sendTelegramNotification(event, message); // Enviar notificação para cada evento
                 }
             }
         }
@@ -196,13 +159,20 @@ async function downloadCsv() {
 
         return new Promise((resolve, reject) => {
             response.data.pipe(writer);
-            writer.on('finish', resolve); // Resolva a Promise quando a escrita estiver concluída
-            writer.on('error', reject);   // Rejeite a Promise em caso de erro
+            writer.on('finish', () => {
+                console.log('CSV baixado e salvo em:', filePath);
+                resolve(); // Resolva a Promise quando a escrita estiver concluída
+            });
+            writer.on('error', (err) => {
+                console.error('Erro ao salvar o arquivo CSV:', err);
+                reject(err);   // Rejeite a Promise em caso de erro
+            });
         });
     } catch (err) {
         throw new Error(`Erro ao realizar o download do arquivo CSV: ${err.message}`);
     }
 }
+
 
 // Função para realizar o scrape
 function scrape(){
