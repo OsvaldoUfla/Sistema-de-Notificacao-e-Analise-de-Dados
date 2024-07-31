@@ -1,6 +1,7 @@
 # Ignorar arquivos e pastas relacionados ao ambiente
 .env/
 .env.*
+.env
 
 # Ignorar diretórios node_modules e log
 node_modules/
