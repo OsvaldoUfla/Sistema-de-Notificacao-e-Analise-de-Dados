@@ -1,32 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Evento</title>
     <link rel="stylesheet" href="/styles.css">
-    <style>
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 20px;
-        }
-        .checkbox-group label {
-            margin-bottom: 10px;
-        }
-        .checkbox-group input[type="checkbox"] {
-            margin-right: 10px;
-        }
-    </style>
 </head>
 <body>
     <h1>Cadastro de Evento de Notificação</h1>
 
-    <p>Preencha o formulário abaixo para cadastrar um evento de notificação. Sempre que qualquer país ganhar uma nova medalha, você receberá uma notificação via Telegram.</p>
+    <p>Preencha o formulário abaixo para cadastrar um evento de notificação. Sempre que qualquer país ganhar uma nova medalha, você receberá uma notificação por e-mail.</p>
 
     <form id="eventForm">
-        <label for="notificationDetail">ID do Telegram:</label>
-        <input type="text" id="notificationDetail" name="notificationDetail" placeholder="ID do Telegram" required>
+        <label for="notificationDetail">E-mail:</label>
+        <input type="email" id="notificationDetail" name="notificationDetail" placeholder="Seu e-mail" required>
 
         <button type="submit">Cadastrar</button>
     </form>
@@ -38,7 +25,7 @@
             event.preventDefault();
             const formData = new FormData(event.target);
             const data = {
-                notificationType: 'telegram',
+                notificationType: 'email',
                 notificationDetail: formData.get('notificationDetail')
             };
             try {
