@@ -1,4 +1,4 @@
-# GCC129 - Sistemas Distribuídos - UFLA
+# Estudo Dirigido: Sistema de Notificação e Análise de Dados
 
 Este repositório contém o material e código-fonte do trabalho desenvolvido durante a disciplina de GCC129 - Sistemas Distribuídos na Universidade Federal de Lavras (UFLA).
 
@@ -12,10 +12,15 @@ Este repositório contém o material e código-fonte do trabalho desenvolvido du
 
 ## Objetivos do Projeto
 
-- Aplicar os conceitos de sistemas distribuídos aprendidos na disciplina.
-- Desenvolver uma solução prática para um problema específico utilizando sistemas distribuídos.
-- Experimentar diferentes modelos de arquitetura e comunicação em sistemas distribuídos.
-- Analisar e resolver problemas comuns encontrados em sistemas distribuídos.
+Repositório do estudo dirigido da disciplina GCC129 – Sistemas Distribuídos, ministrada na Universidade Federal de Lavras (UFLA) durante o semestre 2024/1. Este projeto envolve o desenvolvimento de um sistema de notificação e análise de dados, incluindo scraping de dados, limpeza de dados, visualização de gráficos e envio de notificações.
+
+## Funcionalidades
+
+- **Scrape usando Bash**: Scripts para download de dados.
+- **Data cleaning usando Python**: Limpeza de dados com scripts Python.
+- **Envio de dataset para servidor Node**: Criação e envio de dataset para o servidor.
+- **Exibição de gráficos no servidor Node**: Visualização de gráficos gerados a partir dos dados.
+- **Envio de notificações para eventos cadastrados**: Sistema de notificações via email, SMS ou Telegram.
 
 ## Como Usar Este Repositório
 
