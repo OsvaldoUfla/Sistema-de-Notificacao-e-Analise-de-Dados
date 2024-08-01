@@ -4,15 +4,12 @@ Este repositório contém o material e código-fonte do trabalho desenvolvido du
 
 ## Conteúdo
 
-- **Documentação do Projeto:** Descrição detalhada do projeto, objetivos e metodologia utilizada.
 - **Código-Fonte:** Implementação do projeto em [linguagem de programação utilizada].
 - **Instruções de Execução:** Passos para configurar e executar o projeto.
-- **Relatórios:** Relatórios de progresso e resultados obtidos durante o desenvolvimento do trabalho.
-- **Referências:** Artigos e livros utilizados como referência para o desenvolvimento do projeto.
 
 ## Objetivos do Projeto
 
-Repositório do estudo dirigido da disciplina GCC129 – Sistemas Distribuídos, ministrada na Universidade Federal de Lavras (UFLA) durante o semestre 2024/1. Este projeto envolve o desenvolvimento de um sistema de notificação e análise de dados, incluindo scraping de dados, limpeza de dados, visualização de gráficos e envio de notificações.
+Este projeto envolve o desenvolvimento de um sistema de notificação e análise de dados, incluindo scraping de dados, limpeza de dados, visualização de gráficos e envio de notificações.
 
 ## Funcionalidades
 
