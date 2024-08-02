@@ -50,12 +50,10 @@ Primeiro, você precisa construir as imagens Docker para cada serviço.
 
 ### Para o node-server:
 #### Abra o terminal na pasta raiz do projeto. 
-#### Navegue para pasta node 
 
     docker build -t node-server-image -f ./node/Dockerfile ./node
 
 ### Para o python-server:
-#### Navegue para pasta python 
 
     docker build -t python-server-image -f ./python/Dockerfile ./python
 
@@ -64,7 +62,6 @@ Primeiro, você precisa construir as imagens Docker para cada serviço.
 Após construir as imagens, você pode executar os contêineres. Como o python-server é uma dependência do node-server, você deve iniciar o contêiner do python-server primeiro.
 
 ### Para o python-server:
-#### Navegue para pasta python 
 
     docker run -d --name python-server-container -p 5000:5000 -v $(pwd)/python:/app python-server-image
 
