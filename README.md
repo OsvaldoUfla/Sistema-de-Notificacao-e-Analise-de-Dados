@@ -74,7 +74,7 @@ Após construir as imagens, você pode executar os contêineres. Como o python-s
 
     docker run -d --name node-server-container --link python-server-container:python-server -p 3000:3000 -v $(pwd)/node:/app -v /app/node_modules node-server-image
 
---link python-server-container:python-server: Conecta o contêiner node-server ao python-server usando um link, permitindo que o node-server se comunique com o python-server via o nome de host python-server.
+--link python-server-container:python-server: Conecta o contêiner node-server ao python-server usando um link, permitindo que o node-server se comunique com o python-server via o nome de host python-server.    
 -v /app/node_modules: Monta o diretório /app/node_modules dentro do contêiner para persistir as dependências.
 
 ### Observações
