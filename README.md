@@ -27,20 +27,20 @@ Este projeto envolve o desenvolvimento de um sistema de notificação e análise
    
     docker-compose up --build  
     
-    O parâmetro --build garante que as imagens sejam reconstruídas com base nas mudanças feitas nos Dockerfile e no conteúdo dos diretórios node e python.   
+O parâmetro --build garante que as imagens sejam reconstruídas com base nas mudanças feitas nos Dockerfile e no conteúdo dos diretórios node e python.   
 
 #### Verifique se os contêineres estão rodando com o comando:
 
     docker-compose ps
 
-    Você deve ver uma lista de contêineres em execução e suas portas mapeadas.
+Você deve ver uma lista de contêineres em execução e suas portas mapeadas.
 
 
 #### Parar e remover os contêineres, você pode usar:
 
     docker-compose down
 
-    Este comando também remove as redes criadas pelo Docker Compose.
+Este comando também remove as redes criadas pelo Docker Compose.
    
     
      
@@ -65,10 +65,10 @@ Após construir as imagens, você pode executar os contêineres. Como o python-s
 
     docker run -d --name python-server-container -p 5000:5000 -v $(pwd)/python:/app python-server-image
 
-    -d: Inicia o contêiner em modo "desanexado" (em segundo plano).
-    --name: Dá um nome ao contêiner para facilitar a referência.
-    -p 5000:5000: Mapeia a porta 5000 do contêiner para a porta 5000 do host.
-    -v $(pwd)/python:/app: Monta o diretório local ./python no diretório /app do contêiner.
+-d: Inicia o contêiner em modo "desanexado" (em segundo plano).
+--name: Dá um nome ao contêiner para facilitar a referência.
+-p 5000:5000: Mapeia a porta 5000 do contêiner para a porta 5000 do host.
+-v $(pwd)/python:/app: Monta o diretório local ./python no diretório /app do contêiner.
 
 ### Para o node-server:
 
