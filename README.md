@@ -49,7 +49,7 @@ Este comando também remove as redes criadas pelo Docker Compose.
 Primeiro, você precisa construir as imagens Docker para cada serviço.
 
 ### Para o node-server:
-#### Abra o terminal na pasta raiz do projeto. 
+Abra o terminal na pasta raiz do projeto. 
 
     docker build -t node-server-image -f ./node/Dockerfile ./node
 
