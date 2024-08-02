@@ -61,16 +61,16 @@ Primeiro, você precisa construir as imagens Docker para cada serviço.
 
 Após construir as imagens, você pode executar os contêineres. Como o python-server é uma dependência do node-server, você deve iniciar o contêiner do python-server primeiro.
 
-### Para o python-server:
+### python-server:
 
     docker run -d --name python-server-container -p 5000:5000 -v $(pwd)/python:/app python-server-image
 
--d: Inicia o contêiner em modo "desanexado" (em segundo plano).
---name: Dá um nome ao contêiner para facilitar a referência.
--p 5000:5000: Mapeia a porta 5000 do contêiner para a porta 5000 do host.
--v $(pwd)/python:/app: Monta o diretório local ./python no diretório /app do contêiner.
+-d: Inicia o contêiner em modo "desanexado" (em segundo plano).   
+--name: Dá um nome ao contêiner para facilitar a referência.    
+-p 5000:5000: Mapeia a porta 5000 do contêiner para a porta 5000 do host.     
+-v $(pwd)/python:/app: Monta o diretório local ./python no diretório /app do contêiner.     
 
-### Para o node-server:
+### node-server:
 
     docker run -d --name node-server-container --link python-server-container:python-server -p 3000:3000 -v $(pwd)/node:/app -v /app/node_modules node-server-image
 
