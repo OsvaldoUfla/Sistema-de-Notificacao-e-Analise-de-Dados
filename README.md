@@ -21,6 +21,7 @@ Este projeto envolve o desenvolvimento de um sistema de notificação e análise
 
 
 ## Com docker-compose
+
 #### Abra o terminal na pasta raiz do projeto.  
 #### Construa e inicie os contêineres usando o Docker Compose com o comando:  
    
@@ -40,7 +41,9 @@ Este projeto envolve o desenvolvimento de um sistema de notificação e análise
     docker-compose down
 
     Este comando também remove as redes criadas pelo Docker Compose.
-
+   
+    
+     
 ## Sem docker-compose
 
 Primeiro, você precisa construir as imagens Docker para cada serviço.
