@@ -18,6 +18,15 @@ Este projeto envolve o desenvolvimento de um sistema de notificação e análise
 - **Exibição de gráficos no servidor Node**: Visualização de gráficos gerados a partir dos dados.
 - **Envio de notificações para eventos cadastrados**: Sistema de notificações via email.
    
+## Como Usar Este Repositório
+
+1. **Clone o repositório:**
+    ```bash
+    git clone https://github.com/OsvaldoUfla/Trabalho---Sistemas-Distribuidos-UFLA.git
+    ```
+2. **Navegue pelos diretórios** para encontrar o material do projeto.
+3. **Siga as instruções** no arquivo `README.md` para configurar e executar o projeto.
+  
 # 1 - Construindo as imagens Docker para cada serviço.
 ---
 Abra o terminal na pasta raiz do projeto e execute os comandos abaixo. 
@@ -62,15 +71,6 @@ node-server:
 
 Certifique-se de ajustar os volumes e portas conforme necessário.
 O comando docker run tem várias opções adicionais, como definir variáveis de ambiente (-e) ou trabalhar com redes específicas (--network).
-
-## Como Usar Este Repositório
-
-1. **Clone o repositório:**
-    ```bash
-    git clone https://github.com/OsvaldoUfla/Trabalho---Sistemas-Distribuidos-UFLA.git
-    ```
-2. **Navegue pelos diretórios** para encontrar o material do projeto.
-3. **Siga as instruções** no arquivo `README.md` para configurar e executar o projeto.
 
 ## Contribuições
 
