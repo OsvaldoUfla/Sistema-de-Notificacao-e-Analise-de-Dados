@@ -49,7 +49,7 @@ Após construir as imagens, você pode executar os contêineres. Como o python-s
 
 python-server:
 
-    docker run -d --name python-server-container -p 5000:5000 -v $(pwd)/python:/app -- network minha_rede python-server-image
+    docker run -d --name python-server-container -p 5000:5000 -v $(pwd)/python:/app --network minha_rede python-server-image
 
 -d: Inicia o contêiner em modo "desanexado" (em segundo plano, se desejar ver as saidas basta retirar -d).   
 --name: Dá um nome ao contêiner para facilitar a referência.    
@@ -59,7 +59,7 @@ python-server:
 
 node-server:
 
-    docker run -d --name node-server-container --link python-server-container:python-server -p 3000:3000 -v $(pwd)/node:/app -v /app/node_modules -- network minha_rede node-server-image
+    docker run -d --name node-server-container --link python-server-container:python-server -p 3000:3000 -v $(pwd)/node:/app -v /app/node_modules --network minha_rede node-server-image
 
 -d: Inicia o contêiner em modo "desanexado" (em segundo plano, se desejar ver as saidas basta retirar -d).   
 --name: Dá um nome ao contêiner para facilitar a referência.   
