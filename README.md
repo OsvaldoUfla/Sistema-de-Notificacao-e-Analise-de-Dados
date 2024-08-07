@@ -67,15 +67,7 @@ node-server:
 -v /app/node_modules: Monta o diretório /app/node_modules dentro do contêiner para persistir as dependências.  
 -- network minha_rede: conecta o server a minha_rede
 
-## Observações
-
-Certifique-se de ajustar os volumes e portas conforme necessário.
-O comando docker run tem várias opções adicionais, como definir variáveis de ambiente (-e) ou trabalhar com redes específicas (--network).
-
-## Contribuições
-
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues para discutir ideias, relatar problemas ou fazer perguntas. Pull requests com melhorias, correções ou novos conteúdos também são encorajadas.
-
-## Licença
-
-Este projeto está licenciado sob a Licença MIT. Consulte o arquivo [LICENSE](LICENSE) para obter mais informações.
+## Acessando o serviço
+Acesse o endereço http://localhost:3000/ em seu navegador.
+Na página contém gráficos com o ranking de medalhas na olimpiadas de 2024.
+Há também um botão de redirecionamento para página de cadastro de email para receber notificações das novas medalhas.
