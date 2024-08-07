@@ -17,8 +17,7 @@ Este projeto envolve o desenvolvimento de um sistema de notificação e análise
 - **Envio de dataset para servidor Node**: Criação e envio de dataset para o servidor.
 - **Exibição de gráficos no servidor Node**: Visualização de gráficos gerados a partir dos dados.
 - **Envio de notificações para eventos cadastrados**: Sistema de notificações via email.
-<br>
-<br>
+   
 # 1 - Construindo as imagens Docker para cada serviço.
 ---
 Abra o terminal na pasta raiz do projeto e execute os comandos abaixo. 
