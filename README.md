@@ -1,4 +1,4 @@
-# Estudo Dirigido: Sistema de Notificação e Análise de Dados
+# Sistema de Notificação e Análise de Dados
 
 Este repositório contém o material e código-fonte do trabalho desenvolvido durante a disciplina de GCC129 - Sistemas Distribuídos na Universidade Federal de Lavras (UFLA).
 
@@ -39,7 +39,7 @@ python-server:
 
 Após construir as imagens, você pode executar os contêineres. Como o python-server é uma dependência do node-server, você deve iniciar o contêiner do python-server primeiro.
 
-### python-server:
+python-server:
 
     docker run -d --name python-server-container -p 5000:5000 -v $(pwd)/python:/app -- network minha_rede python-server-image
 
@@ -49,7 +49,7 @@ Após construir as imagens, você pode executar os contêineres. Como o python-s
 -v $(pwd)/python:/app: Monta o diretório local ./python no diretório /app do contêiner.   
 -- network minha_rede: conecta o server a minha_rede  
 
-### node-server:
+node-server:
 
     docker run -d --name node-server-container --link python-server-container:python-server -p 3000:3000 -v $(pwd)/node:/app -v /app/node_modules -- network minha_rede node-server-image
 
@@ -59,7 +59,7 @@ Após construir as imagens, você pode executar os contêineres. Como o python-s
 -v /app/node_modules: Monta o diretório /app/node_modules dentro do contêiner para persistir as dependências.  
 -- network minha_rede: conecta o server a minha_rede
 
-### Observações
+## Observações
 
 Certifique-se de ajustar os volumes e portas conforme necessário.
 O comando docker run tem várias opções adicionais, como definir variáveis de ambiente (-e) ou trabalhar com redes específicas (--network).
