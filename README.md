@@ -69,5 +69,5 @@ node-server:
 
 ## Acessando o serviço
 Acesse o endereço http://localhost:3000/ em seu navegador.
-Na página contém gráficos com o ranking de medalhas na olimpiadas de 2024.
+Na página contém gráficos com o ranking de medalhas na olimpiadas de 2024.   
 Há também um botão de redirecionamento para página de cadastro de email para receber notificações das novas medalhas.
