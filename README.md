@@ -10,50 +10,24 @@ Este repositório contém o material e código-fonte do trabalho desenvolvido du
 ## Objetivos do Projeto
 
 Este projeto envolve o desenvolvimento de um sistema de notificação e análise de dados, incluindo scraping de dados, limpeza de dados, visualização de gráficos e envio de notificações.
-
+   
 ## Funcionalidades
-
 - **Scrape usando Bash**: Scripts para download de dados.
 - **Data cleaning usando Python**: Limpeza de dados com scripts Python.
 - **Envio de dataset para servidor Node**: Criação e envio de dataset para o servidor.
 - **Exibição de gráficos no servidor Node**: Visualização de gráficos gerados a partir dos dados.
-- **Envio de notificações para eventos cadastrados**: Sistema de notificações via email, SMS ou Telegram.
+- **Envio de notificações para eventos cadastrados**: Sistema de notificações via email.
+<br>
+<br>
+# 1 - Construir as imagens Docker para cada serviço.
+---
+Abra o terminal na pasta raiz do projeto e execute os comandos abaixo. 
 
-
-## Com docker-compose
-
-#### Abra o terminal na pasta raiz do projeto.  
-#### Construa e inicie os contêineres usando o Docker Compose com o comando:  
-   
-    docker-compose up --build  
-    
-O parâmetro --build garante que as imagens sejam reconstruídas com base nas mudanças feitas nos Dockerfile e no conteúdo dos diretórios node e python.   
-
-#### Verifique se os contêineres estão rodando com o comando:
-
-    docker-compose ps
-
-Você deve ver uma lista de contêineres em execução e suas portas mapeadas.
-
-
-#### Parar e remover os contêineres, você pode usar:
-
-    docker-compose down
-
-Este comando também remove as redes criadas pelo Docker Compose.
-   
-    
-     
-## Sem docker-compose
-
-Primeiro, você precisa construir as imagens Docker para cada serviço.
-
-### Para o node-server:
-Abra o terminal na pasta raiz do projeto. 
+node-server:
 
     docker build -t node-server-image -f ./node/Dockerfile ./node
 
-### Para o python-server:
+python-server:
 
     docker build -t python-server-image -f ./python/Dockerfile ./python
 
