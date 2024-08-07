@@ -19,7 +19,7 @@ Este projeto envolve o desenvolvimento de um sistema de notificação e análise
 - **Envio de notificações para eventos cadastrados**: Sistema de notificações via email.
 <br>
 <br>
-# 1 - Construir as imagens Docker para cada serviço.
+# 1 - Construindo as imagens Docker para cada serviço.
 ---
 Abra o terminal na pasta raiz do projeto e execute os comandos abaixo. 
 
@@ -31,25 +31,33 @@ python-server:
 
     docker build -t python-server-image -f ./python/Dockerfile ./python
 
-### Executando os Contêineres
+## Criando rede para comunicação entre os server
+
+    docker network create minha_rede
+
+## Executando os Contêineres
 
 Após construir as imagens, você pode executar os contêineres. Como o python-server é uma dependência do node-server, você deve iniciar o contêiner do python-server primeiro.
 
 ### python-server:
 
-    docker run -d --name python-server-container -p 5000:5000 -v $(pwd)/python:/app python-server-image
+    docker run -d --name python-server-container -p 5000:5000 -v $(pwd)/python:/app -- network minha_rede python-server-image
 
--d: Inicia o contêiner em modo "desanexado" (em segundo plano).   
+-d: Inicia o contêiner em modo "desanexado" (em segundo plano, se desejar ver as saidas basta retirar -d).   
 --name: Dá um nome ao contêiner para facilitar a referência.    
 -p 5000:5000: Mapeia a porta 5000 do contêiner para a porta 5000 do host.     
--v $(pwd)/python:/app: Monta o diretório local ./python no diretório /app do contêiner.     
+-v $(pwd)/python:/app: Monta o diretório local ./python no diretório /app do contêiner.   
+-- network minha_rede: conecta o server a minha_rede  
 
 ### node-server:
 
-    docker run -d --name node-server-container --link python-server-container:python-server -p 3000:3000 -v $(pwd)/node:/app -v /app/node_modules node-server-image
+    docker run -d --name node-server-container --link python-server-container:python-server -p 3000:3000 -v $(pwd)/node:/app -v /app/node_modules -- network minha_rede node-server-image
 
+-d: Inicia o contêiner em modo "desanexado" (em segundo plano, se desejar ver as saidas basta retirar -d).   
+--name: Dá um nome ao contêiner para facilitar a referência.   
 --link python-server-container:python-server: Conecta o contêiner node-server ao python-server usando um link, permitindo que o node-server se comunique com o python-server via o nome de host python-server.    
--v /app/node_modules: Monta o diretório /app/node_modules dentro do contêiner para persistir as dependências.
+-v /app/node_modules: Monta o diretório /app/node_modules dentro do contêiner para persistir as dependências.  
+-- network minha_rede: conecta o server a minha_rede
 
 ### Observações
 
