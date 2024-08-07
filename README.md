@@ -27,7 +27,7 @@ Este projeto envolve o desenvolvimento de um sistema de notificação e análise
 2. **Navegue pelos diretórios** para encontrar o material do projeto.
 3. **Siga as instruções** no arquivo `README.md` para configurar e executar o projeto.
   
-# 1 - Construindo as imagens Docker para cada serviço.
+# Construindo as imagens Docker para cada serviço.
 ---
 Abra o terminal na pasta raiz do projeto e execute os comandos abaixo. 
 
