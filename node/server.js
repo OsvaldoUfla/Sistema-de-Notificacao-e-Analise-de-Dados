@@ -3,7 +3,8 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
-//const send = require('./services/nodemailer');
+const nodemailer = require('nodemailer');
+require('dotenv').config(); // Carregar variáveis de ambiente do arquivo .env
  
 
 const app = express();
@@ -11,6 +12,37 @@ const port = 3000;
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+// Middleware para analisar o corpo da requisição como JSON
+app.use(express.json());
+
+// Configurar o transportador do nodemailer
+const transporter = nodemailer.createTransport({
+    host: process.env.MAIL_HOST,
+    port: parseInt(process.env.MAIL_PORT, 10), // A porta deve ser um número
+    secure: process.env.MAIL_SECURE === 'false', // true para SSL, false para TLS
+    auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+    }
+});
+
+app.post('/send', async (req, res) => {
+    const { to, subject, text } = req.body;
+    console.log(req.body);
+    console.log(to, subject, text);
+    try {
+        await transporter.sendMail({
+            from: process.env.MAIL_FROM,
+            to,
+            subject,
+            text,
+        });
+        return res.json({ message: 'Email enviado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao enviar e-mail:', error);
+        return res.status(500).json({ message: 'Erro ao enviar e-mail!' });
+    }
+});
 
 // Caminho do arquivo JSON para armazenar eventos
 const eventsFilePath = path.join(__dirname, 'events.json');
@@ -75,6 +107,7 @@ async function checkForMedalUpdates() {
                 const events = await loadEvents(); // Carregar eventos do arquivo
                 for (const event of events) {
                     send(event.notificationDetail, 'Nova Medalha!', message); // Enviar notificação para cada evento
+                    console.log('Notificação enviada para:', event.notificationDetail);
                 }
             }
         }

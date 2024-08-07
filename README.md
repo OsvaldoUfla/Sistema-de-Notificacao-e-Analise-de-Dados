@@ -59,11 +59,10 @@ python-server:
 
 node-server:
 
-    docker run -d --name node-server-container --link python-server-container:python-server -p 3000:3000 -v $(pwd)/node:/app -v /app/node_modules --network minha_rede node-server-image
+    docker run -d --name node-server-container -p 3000:3000 -v $(pwd)/node:/app -v /app/node_modules --network minha_rede node-server-image
 
 -d: Inicia o contêiner em modo "desanexado" (em segundo plano, se desejar ver as saidas basta retirar -d).   
 --name: Dá um nome ao contêiner para facilitar a referência.   
---link python-server-container:python-server: Conecta o contêiner node-server ao python-server usando um link, permitindo que o node-server se comunique com o python-server via o nome de host python-server.    
 -v /app/node_modules: Monta o diretório /app/node_modules dentro do contêiner para persistir as dependências.  
 -- network minha_rede: conecta o server a minha_rede
 
