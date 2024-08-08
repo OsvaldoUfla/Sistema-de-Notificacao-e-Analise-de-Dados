@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 require('dotenv').config(); // Carregar variáveis de ambiente do arquivo .env
  
-
+oldTally = []
 const app = express();
 const port = 3000;
 
@@ -15,6 +15,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Middleware para analisar o corpo da requisição como JSON
 app.use(express.json());
 
+//====================================================================================================
+//Rotas
+// Rota para a página inicial
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/index.html'));
+    downloadDados();
+});
+
+// Rota para a página de notificação
+app.get('/notify', (req, res) => {  
+    res.sendFile(path.join(__dirname, 'public/notify.html'));
+});
+
+// Endpoint para cadastro de eventos
+app.post('/api/events', (req, res) => {
+    const { notificationType, notificationDetail } = req.body;
+    const events = loadEvents(); // Carregar eventos do arquivo
+    const newEvent = { notificationType, notificationDetail };
+    events.push(newEvent);
+    saveEvents(events); // Salvar eventos atualizados no arquivo
+    res.status(201).send('Evento cadastrado com sucesso!');
+    downloadDados();
+});
+
+//====================================================================================================
+//Email
 // Configurar o transportador do nodemailer
 const transporter = nodemailer.createTransport({
     host: process.env.MAIL_HOST,
@@ -26,22 +52,26 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-function send(to, subject, text) {
-    //const { to, subject, text } = req.body;
+app.post('/send', async (req, res) => {
+    const { to, subject, text } = req.body;
+    console.log(req.body);
+    console.log(to, subject, text);
     try {
-        transporter.sendMail({
+        await transporter.sendMail({
             from: process.env.MAIL_FROM,
             to,
             subject,
             text,
-        })
+        });
         return res.json({ message: 'Email enviado com sucesso!' });
     } catch (error) {
         console.error('Erro ao enviar e-mail:', error);
         return res.status(500).json({ message: 'Erro ao enviar e-mail!' });
     }
-}
+});
 
+//====================================================================================================
+//Eventos e Notificações
 // Caminho do arquivo JSON para armazenar eventos
 const eventsFilePath = path.join(__dirname, 'events.json');
 
@@ -59,52 +89,25 @@ function saveEvents(events) {
     fs.writeFileSync(eventsFilePath, JSON.stringify(events, null, 2), 'utf-8');
 }
 
-// Rota para a página inicial
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index.html'));
-});
-
-// Rota para a página de notificação
-app.get('/notify', (req, res) => {  
-    res.sendFile(path.join(__dirname, 'public/notify.html'));
-});
-
-// Endpoint para cadastro de eventos
-app.post('/api/events', (req, res) => {
-    const { notificationType, notificationDetail } = req.body;
-    const events = loadEvents(); // Carregar eventos do arquivo
-    const newEvent = { notificationType, notificationDetail };
-    events.push(newEvent);
-    saveEvents(events); // Salvar eventos atualizados no arquivo
-    res.status(201).send('Evento cadastrado com sucesso!');
-});
-
-
-async function getMedalData() { 
-    const tally = processCsv(path.join('uploads', 'downloaded.csv'));
-    return tally;
-}
-
-async function checkForMedalUpdates() {
+//====================================================================================================
+// Atualização do Quadro de Medalhas
+function checkForMedalUpdates() {
     try {
-        const oldTally = await getMedalData(); // Obter dados antigos do quadro de medalhas
-        await downloadCsv(); // Baixar o arquivo CSV atualizado
-        const newTally = await getMedalData(); // Obter dados atualizados do quadro de medalhas
+        downloadDados(); // Baixar o arquivo CSV atualizado
+        const newTally = getMedalData(); // Obter dados atualizados do quadro de medalhas
 
-        for (let country in newTally) {
+        for (let country in newTally) { 
             const newMedals = newTally[country];
             const oldMedals = oldTally[country] || { gold: 0, silver: 0, bronze: 0 };
 
             // Verifica se o país ganhou novas medalhas
             if (newMedals.gold > oldMedals.gold || newMedals.silver > oldMedals.silver || newMedals.bronze > oldMedals.bronze) {
-                const message = `${newMedals.country} ganhou uma nova medalha!`; // Mensagem de notificação
-                console.log(`${newMedals.country} ganhou uma nova medalha!`);
-
-                const events = await loadEvents(); // Carregar eventos do arquivo
+                const message = '${newMedals.country} ganhou uma nova medalha!' // Mensagem de notificação
+                const events = loadEvents(); // Carregar eventos do arquivo
                 for (const event of events) {
                     send(event.notificationDetail, 'Nova Medalha!', message); // Enviar notificação para cada evento
-                    console.log('Notificação enviada para:', event.notificationDetail);
                 }
+                oldTally = newMedals; // Atualizar o quadro de medalhas antigo
             }
         }
         
@@ -113,10 +116,10 @@ async function checkForMedalUpdates() {
     }
 }
 
-// Função para processar o arquivo CSV e enviar os dados para o cliente
-async function processCsv(filePath) {
+// Função que lê o arquivo CSV e retorna os dados do quadro de medalhas
+function getMedalData() {
     try {
-        const data = fs.readFileSync(filePath, 'utf-8');
+        const data = fs.readFileSync(path.join('uploads', 'downloaded.csv'), 'utf-8');
         const lines = data.split('\n').slice(1);
         const result = lines.map(line => {
             const [posicao, country, gold, silver, bronze, total] = line.split(',');
@@ -130,78 +133,40 @@ async function processCsv(filePath) {
         }).filter(d => d.country);
         return result;
     } catch (err) {
-        throw new Error(`Erro ao processar o arquivo CSV: ${err.message}`);
+        throw new Error('Erro ao processar o arquivo CSV: ${err.message}');
     }
 }
 
-// Rota para baixar o arquivo CSV do servidor Python e enviar os dados
-app.get('/data', async (req, res) => {
+// Função para requisitar o download do arquivo CSV e processar os dados
+function downloadDados(){
     try {
-        await scrape(); // Realizar o scrape dos dados
-        // Verificar se houve atualização no quadro de medalhas
-        await checkForMedalUpdates();
-
         // Fazer o download do CSV atualizado
-        const csvUrl = 'http://python-server-container:5000/download_csv'; // URL do servidor Python para o CSV
-        const response = await axios.get(csvUrl, { responseType: 'stream' });
-        const filePath = path.join('uploads', 'downloaded.csv');
-        const writer = fs.createWriteStream(filePath);
-
-        response.data.pipe(writer);
-
-        writer.on('finish', async () => {
-            try {
-                const csvData = await processCsv(filePath);
-                res.json(csvData); // Enviar dados para o cliente
-            } catch (err) {
-                res.status(500).send(err.message);
-            }
-        });
-
-        writer.on('error', (err) => {
-            res.status(500).send(`Erro ao salvar o arquivo CSV: ${err.message}`);
-        });
-    } catch (error) {
-        res.status(500).send(`Erro ao baixar o arquivo CSV: ${error.message}`);
+        try {
+            const response = axios.get('http://python-server:5000/download_csv', { responseType: 'stream' });
+            const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
+            const writer = fs.createWriteStream(filePath);
+    
+            return new Promise((resolve, reject) => {
+                response.data.pipe(writer);
+                writer.on('finish', () => {
+                    console.log('CSV baixado e salvo em:', filePath);
+                    resolve(); // Resolva a Promise quando a escrita estiver concluída
+                });
+                writer.on('error', (err) => {
+                    console.error('Erro ao salvar o arquivo CSV:', err);
+                    reject(err);   // Rejeite a Promise em caso de erro
+                });
+            });
+        } catch (err) {
+            throw new Error('Erro ao realizar o download do arquivo CSV: ${err.message}');
+        }
     }
-});
-
-// Função para realizar o download do arquivo CSV
-async function downloadCsv() {
-    try {
-        const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' });
-        const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
-        const writer = fs.createWriteStream(filePath);
-
-        return new Promise((resolve, reject) => {
-            response.data.pipe(writer);
-            writer.on('finish', () => {
-                console.log('CSV baixado e salvo em:', filePath);
-                resolve(); // Resolva a Promise quando a escrita estiver concluída
-            });
-            writer.on('error', (err) => {
-                console.error('Erro ao salvar o arquivo CSV:', err);
-                reject(err);   // Rejeite a Promise em caso de erro
-            });
-        });
-    } catch (err) {
-        throw new Error(`Erro ao realizar o download do arquivo CSV: ${err.message}`);
+    catch (err) {
+        console.error('Erro ao processar o arquivo CSV:', err);
     }
 }
 
-// Função para realizar o scrape
-function scrape(){
-    try {
-        const res = axios.get('http://python-server-conteiner:5000/scrape');
-        return res;
-    } catch (error) {
-        return error;
-    }
-}
-
-// Simular monitoramento de medalhas a cada 5 minutos
-//setInterval(checkForMedalUpdates, 300000);
-setInterval(checkForMedalUpdates, 25000);
+setInterval(checkForMedalUpdates, 25000); // Verificar atualizações a cada 25 segundos
 
 
 // Iniciar o servidor
