@@ -3,7 +3,8 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const expressJson = require('express').json;
-const TelegramBot = require('node-telegram-bot-api');
+import { Telegraf } from 'telegraf'
+import { message } from 'telegraf/filters'
 const csv = require('csv-parser');
 require('dotenv').config();
 
