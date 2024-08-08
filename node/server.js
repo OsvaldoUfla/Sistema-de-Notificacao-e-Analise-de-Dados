@@ -51,18 +51,18 @@ app.get('/data', async (req, res) => {
 });
 
 const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST1,
+    host: process.env.MAIL_HOST,
     port: parseInt(process.env.MAIL_PORT, 10),
     secure: false,
     auth: {
-        user: process.env.MAIL_USER1,
-        pass: process.env.MAIL_PASS1,
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
     }
 });
 
 function send(to, subject, text) {
     return transporter.sendMail({
-        from: process.env.MAIL_FROM1,
+        from: process.env.MAIL_FROM,
         to,
         subject,
         text,
