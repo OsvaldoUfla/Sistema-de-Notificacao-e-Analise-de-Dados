@@ -3,7 +3,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const expressJson = require('express').json;
-const nodemailer = require('nodemailer');
+const TelegramBot = require('node-telegram-bot-api');
 const csv = require('csv-parser');
 require('dotenv').config();
 
@@ -15,19 +15,21 @@ const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressJson());
 
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+
 app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index.html'));
     console.log('Quadro de medalhas atualizado!');
 });
 
-app.get('/notify', (req, res) => {  
+app.get('/notify', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/notify.html'));
 });
 
 app.post('/api/events', async (req, res) => {
     const { notificationDetail } = req.body;
     const events = loadEvents();
-    const newEvent = { notificationType: 'email', notificationDetail };
+    const newEvent = { notificationType: 'telegram', notificationDetail };
     events.push(newEvent);
     saveEvents(events);
     res.status(201).send('Evento cadastrado com sucesso!');
@@ -50,23 +52,8 @@ app.get('/data', async (req, res) => {
     }
 });
 
-const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: parseInt(process.env.MAIL_PORT, 10),
-    secure: false,
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-    }
-});
-
-function send(to, subject, text) {
-    return transporter.sendMail({
-        from: process.env.MAIL_FROM,
-        to,
-        subject,
-        text,
-    });
+function send(to, message) {
+    return bot.sendMessage(to, message);
 }
 
 const eventsFilePath = path.join(__dirname, 'events.json');
@@ -96,7 +83,7 @@ async function checkForMedalUpdates() {
                 const message = `${newMedals.country} ganhou uma nova medalha!`;
                 const events = loadEvents();
                 for (const event of events) {
-                    await send(event.notificationDetail, 'Nova Medalha!', message);
+                    await send(event.notificationDetail, message);
                 }
                 oldTally[newMedals.country] = newMedals;
             }
@@ -128,8 +115,7 @@ function getMedalData() {
 async function downloadAndSaveCsv() {
     try {
         const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' });
-        //const response = await axios.get('http://0.0.0.0:5000/download_csv', { responseType: 'stream' });
-        const writer = fs.createWriteStream(filePath);  // Definição da variável writer
+        const writer = fs.createWriteStream(filePath);
 
         return new Promise((resolve, reject) => {
             response.data.pipe(writer);
