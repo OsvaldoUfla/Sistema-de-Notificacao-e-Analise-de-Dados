@@ -41,7 +41,7 @@ python-server:
 
 ## Criando rede para comunicação entre os server
 
-    docker network create minha_rede
+    docker network create minha-rede
 
 ## Executando os Contêineres
 
