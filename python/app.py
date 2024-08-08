@@ -14,10 +14,12 @@ def scrape_data():
         subprocess.run(['./scrape.sh'], check=True)
     except subprocess.CalledProcessError as e:
         return f"Erro ao executar o script Bash: {str(e)}", 500
+        print(f"Erro ao executar o script Bash: {str(e)}")  
 
     # Verificar se o arquivo HTML existe
     if not os.path.exists('data.html'):
         return "Arquivo 'data.html' não encontrado.", 404
+        print("Arquivo 'data.html' não encontrado.")
 
     # Abrir e ler o conteúdo do arquivo HTML
     try:
@@ -25,6 +27,7 @@ def scrape_data():
             html_content = file.read()
     except Exception as e:
         return f"Erro ao ler o arquivo HTML: {str(e)}", 500
+        print(f"Erro ao ler o arquivo HTML: {str(e)}")
 
     # Parse o HTML com BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -35,6 +38,7 @@ def scrape_data():
     # Verifique se a tabela foi encontrada
     if table is None:
         return "Tabela não encontrada.", 404
+        print("Tabela não encontrada.")
 
     medal_data = [] # Inicialize medal_data
 
@@ -65,6 +69,7 @@ def scrape_data():
     # Verifique se medal_data foi preenchido
     if not medal_data:
         return "Nenhum dado de medalha encontrado.", 404
+        print("Nenhum dado de medalha encontrado.")
 
     # Salvar os dados em um arquivo CSV
     try:
@@ -74,10 +79,12 @@ def scrape_data():
             writer.writerows(medal_data)
     except Exception as e:
         return f"Erro ao salvar o arquivo CSV: {str(e)}", 500
+        print(f"Erro ao salvar o arquivo CSV: {str(e)}")
 
     # Verificar se o arquivo CSV foi criado corretamente
     if not os.path.exists('medal_data.csv'):
         return "Arquivo CSV não encontrado.", 404
+        print("Arquivo CSV não encontrado.")
 
     # Enviar o arquivo CSV
     return send_file('medal_data.csv', as_attachment=True)
