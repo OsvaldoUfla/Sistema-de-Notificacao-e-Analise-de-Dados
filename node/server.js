@@ -4,11 +4,13 @@ const fs = require('fs');
 const path = require('path');
 const expressJson = require('express').json;
 const nodemailer = require('nodemailer');
+const csv = require('csv-parser');
 require('dotenv').config();
 
 let oldTally = {};
 const app = express();
 const port = 3000;
+const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressJson());
@@ -33,8 +35,17 @@ app.post('/api/events', async (req, res) => {
 });
 
 app.get('/data', async (req, res) => {
+    const results = [];
     try {
-        res.json(path.join('uploads', 'downloaded.csv'));
+        fs.createReadStream(filePath)
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', () => {
+          res.json(results);
+        })
+        .on('error', (err) => {
+          res.status(500).json({ error: err.message });
+        });
     } catch (err) {
         res.status(500).send(err.message);
     }
@@ -98,7 +109,7 @@ async function checkForMedalUpdates() {
 
 function getMedalData() {
     try {
-        const data = fs.readFileSync(path.join('uploads', 'downloaded.csv'), 'utf-8');
+        const data = fs.readFileSync(filePath, 'utf-8');
         const lines = data.split('\n').slice(1);
         return lines.map(line => {
             const [posicao, country, gold, silver, bronze, total] = line.split(',');
@@ -118,7 +129,6 @@ function getMedalData() {
 async function downloadAndSaveCsv() {
     try {
         const response = await axios.get('http://python-server:5000/download_csv', { responseType: 'stream' });
-        const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
         const writer = fs.createWriteStream(filePath);
 
         return new Promise((resolve, reject) => {

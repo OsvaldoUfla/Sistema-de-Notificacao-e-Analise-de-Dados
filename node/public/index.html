@@ -85,11 +85,11 @@
                     const x = d3.scaleBand()
                         .rangeRound([0, width])
                         .padding(0.1)
-                        .domain(data.map(d => d.country));
+                        .domain(data.map(d => d.Country));
 
                     const y = d3.scaleLinear()
                         .rangeRound([height, 0])
-                        .domain([0, d3.max(data, d => d[yValue])]);
+                        .domain([0, d3.max(data, d => +d[yValue])]);
 
                     g.append("g")
                         .attr("class", "axis axis--x")
@@ -116,17 +116,17 @@
                         .data(data)
                         .enter().append("rect")
                         .attr("class", `bar ${barClass}`)
-                        .attr("x", d => x(d.country))
-                        .attr("y", d => y(d[yValue]))
+                        .attr("x", d => x(d.Country))
+                        .attr("y", d => y(+d[yValue]))
                         .attr("width", x.bandwidth())
-                        .attr("height", d => height - y(d[yValue]));
+                        .attr("height", d => height - y(+d[yValue]));
                 }
 
                 // Criar gráficos para ouro, prata, bronze e total
-                createChart(data, "#gold-chart", "gold", "gold", "Medalhas de Ouro");
-                createChart(data, "#silver-chart", "silver", "silver", "Medalhas de Prata");
-                createChart(data, "#bronze-chart", "bronze", "bronze", "Medalhas de Bronze");
-                createChart(data, "#total-chart", "total", "total", "Total de Medalhas");
+                createChart(data, "#gold-chart", "Gold", "gold", "Medalhas de Ouro");
+                createChart(data, "#silver-chart", "Silver", "silver", "Medalhas de Prata");
+                createChart(data, "#bronze-chart", "Bronze", "bronze", "Medalhas de Bronze");
+                createChart(data, "#total-chart", "Total", "total", "Total de Medalhas");
             })
             .catch(error => {
                 console.error('Erro ao carregar os dados:', error);
