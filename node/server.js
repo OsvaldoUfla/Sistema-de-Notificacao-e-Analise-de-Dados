@@ -20,7 +20,7 @@ app.use(express.json()); // Middleware para analisar o corpo da requisição com
 // Rota para a página inicial
 app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index.html'));
-    await downloadDados(); // Baixar os dados ao carregar a página inicial
+    await checkForMedalUpdates(); // Baixar os dados ao carregar a página inicial
 });
 
 // Rota para a página de notificação
@@ -36,7 +36,6 @@ app.post('/api/events', async (req, res) => {
     events.push(newEvent);
     saveEvents(events); // Salvar eventos atualizados no arquivo
     res.status(201).send('Evento cadastrado com sucesso!');
-    await downloadDados(); // Baixar os dados ao cadastrar um evento
 });
 
 //====================================================================================================
@@ -53,11 +52,10 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Endpoint para envio de emails
-app.post('/send', async (req, res) => {
-    const { to, subject, text } = req.body;
+// função para envio de emails
+function send(to, subject, text) {
     try {
-        await transporter.sendMail({
+        transporter.sendMail({
             from: process.env.MAIL_FROM,
             to,
             subject,
@@ -68,7 +66,7 @@ app.post('/send', async (req, res) => {
         console.error('Erro ao enviar e-mail:', error);
         return res.status(500).json({ message: 'Erro ao enviar e-mail!' });
     }
-});
+}
 
 //====================================================================================================
 // Eventos e Notificações
@@ -142,7 +140,7 @@ function getMedalData() {
 // Função para requisitar o download do arquivo CSV e processar os dados
 async function downloadDados(){
     try {
-        const response = await axios.get('http://python-server:5000/download_csv', { responseType: 'stream' });
+        const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' });
         const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
         const writer = fs.createWriteStream(filePath);
 
