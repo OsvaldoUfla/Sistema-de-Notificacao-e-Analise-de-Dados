@@ -7,7 +7,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const csv = require('csv-parser');
 require('dotenv').config();
 
-let oldTally = {};
+
 const app = express();
 const port = 3000;
 const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
@@ -72,6 +72,7 @@ function saveEvents(events) {
 
 async function checkForMedalUpdates() {
     try {
+        const oldTally = getMedalData();
         await downloadAndSaveCsv();
         const newTally = getMedalData();
 

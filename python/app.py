@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response
 import subprocess
 import csv
 from bs4 import BeautifulSoup
@@ -6,28 +6,30 @@ import os
 
 app = Flask(__name__)
 
-# Rota para download do arquivo CSV    
-@app.route('/download_csv', methods=['GET'])    
 def scrape_data():
     # Executar o script Bash para fazer o download dos dados
     try:
         subprocess.run(['./scrape.sh'], check=True)
     except subprocess.CalledProcessError as e:
-        return f"Erro ao executar o script Bash: {str(e)}", 500
-        print(f"Erro ao executar o script Bash: {str(e)}")  
+        print(f"Erro ao executar o script Bash: {str(e)}")
+        return Response(f"Erro ao executar o script Bash: {str(e)}", status=500)
+
+@app.route('/download_csv', methods=['GET'])    
+def download_csv():
+    scrape_data()  # Chamar a função scrape_data
 
     # Verificar se o arquivo HTML existe
     if not os.path.exists('data.html'):
-        return "Arquivo 'data.html' não encontrado.", 404
         print("Arquivo 'data.html' não encontrado.")
+        return Response("Arquivo 'data.html' não encontrado.", status=404)
 
     # Abrir e ler o conteúdo do arquivo HTML
     try:
         with open('data.html', 'r', encoding='utf-8') as file:
             html_content = file.read()
     except Exception as e:
-        return f"Erro ao ler o arquivo HTML: {str(e)}", 500
         print(f"Erro ao ler o arquivo HTML: {str(e)}")
+        return Response(f"Erro ao ler o arquivo HTML: {str(e)}", status=500)
 
     # Parse o HTML com BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -37,10 +39,10 @@ def scrape_data():
 
     # Verifique se a tabela foi encontrada
     if table is None:
-        return "Tabela não encontrada.", 404
         print("Tabela não encontrada.")
+        return Response("Tabela não encontrada.", status=404)
 
-    medal_data = [] # Inicialize medal_data
+    medal_data = []  # Inicialize medal_data
 
     # Extraia as linhas da tabela
     rows = table.find_all('tr')
@@ -56,7 +58,7 @@ def scrape_data():
             silver_medals = cells[3].get_text(strip=True)
             bronze_medals = cells[4].get_text(strip=True)
             total_medals = cells[5].get_text(strip=True)
-            
+
             medal_data.append({
                 'Posicao': country_Pos,
                 'Country': country_name,
@@ -68,8 +70,8 @@ def scrape_data():
 
     # Verifique se medal_data foi preenchido
     if not medal_data:
-        return "Nenhum dado de medalha encontrado.", 404
         print("Nenhum dado de medalha encontrado.")
+        return Response("Nenhum dado de medalha encontrado.", status=404)
 
     # Salvar os dados em um arquivo CSV
     try:
@@ -78,13 +80,13 @@ def scrape_data():
             writer.writeheader()
             writer.writerows(medal_data)
     except Exception as e:
-        return f"Erro ao salvar o arquivo CSV: {str(e)}", 500
         print(f"Erro ao salvar o arquivo CSV: {str(e)}")
+        return Response(f"Erro ao salvar o arquivo CSV: {str(e)}", status=500)
 
     # Verificar se o arquivo CSV foi criado corretamente
     if not os.path.exists('medal_data.csv'):
-        return "Arquivo CSV não encontrado.", 404
         print("Arquivo CSV não encontrado.")
+        return Response("Arquivo CSV não encontrado.", status=404)
 
     # Enviar o arquivo CSV
     return send_file('medal_data.csv', as_attachment=True)

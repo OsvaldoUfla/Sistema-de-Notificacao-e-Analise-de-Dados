@@ -3,6 +3,8 @@
 # URL do site a ser raspado
 URL="https://ge.globo.com/olimpiadas/quadro-de-medalhas-olimpiadas-paris-2024/"
 
+#curl -sL -A "Mozilla/5.0" "https://olympics.com/pt/paris-2024/medalhas" -o data.html
+
 # Nome do arquivo onde os dados serão salvos
 OUTPUT_FILE="data.html"
 
