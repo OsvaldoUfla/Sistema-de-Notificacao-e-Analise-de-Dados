@@ -127,6 +127,9 @@
                 createChart(data, "#silver-chart", "silver", "silver", "Medalhas de Prata");
                 createChart(data, "#bronze-chart", "bronze", "bronze", "Medalhas de Bronze");
                 createChart(data, "#total-chart", "total", "total", "Total de Medalhas");
+            })
+            .catch(error => {
+                console.error('Erro ao carregar os dados:', error);
             });
     </script>
 </body>

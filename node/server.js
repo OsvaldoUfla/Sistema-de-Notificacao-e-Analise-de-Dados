@@ -34,9 +34,7 @@ app.post('/api/events', async (req, res) => {
 
 app.get('/data', async (req, res) => {
     try {
-        await downloadAndSaveCsv();
-        const csvData = await processCsv(path.join('uploads', 'downloaded.csv'));
-        res.json(csvData);
+        res.json(path.join('uploads', 'downloaded.csv'));
     } catch (err) {
         res.status(500).send(err.message);
     }
