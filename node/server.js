@@ -8,7 +8,7 @@ import { message } from 'telegraf/filters'
 const csv = require('csv-parser');
 require('dotenv').config();
 
-
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const app = express();
 const port = 3000;
 const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
