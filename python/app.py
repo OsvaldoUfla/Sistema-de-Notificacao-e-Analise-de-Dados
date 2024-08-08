@@ -4,19 +4,11 @@ import csv
 from bs4 import BeautifulSoup
 import os
 
-app = Flask(__name__)
+app = Flask(_name_)
 
 # http://python-server:5000/download_csv
 # Rota para download do arquivo CSV    
 @app.route('/download_csv', methods=['GET'])    
-def upload_csv():
-    scrape_data()   # Chama a função que realiza o scrape e salva os dados em um arquivo CSV
-    
-    if not os.path.exists('medal_data.csv'):    # Verificar se o arquivo CSV existe
-        return "Arquivo CSV não encontrado.", 404
-    else:
-        return send_file('medal_data.csv', as_attachment=True)  # Enviar o arquivo CSV como um anexo
-
 def scrape_data():
     # Executar o script Bash para fazer o download dos dados
     try:
@@ -24,22 +16,7 @@ def scrape_data():
     except subprocess.CalledProcessError as e:
         return f"Erro ao executar o script Bash: {str(e)}", 500
 
-    # Extraia e salve os dados
-    try:
-        medal_data = extract_medal_data()
-        if not medal_data:
-            return "Nenhum dado encontrado.", 404
-        else:
-            save_medal_data(medal_data)
-            response = make_response("csv Salvo!", 200)  
-            return  response
-    except Exception as e:
-        return f"Erro ao processar os dados: {str(e)}", 500
-
-# função para extrair os dados da tabela HTML
-def extract_medal_data():
-    # Inicialize medal_data para garantir que ela sempre tenha um valor
-    medal_data = []
+    medal_data = [] # Inicialize medal_data para garantir que ela sempre tenha um valor
 
     # Abrir e ler o conteúdo do arquivo HTML
     try:
@@ -47,7 +24,6 @@ def extract_medal_data():
             html_content = file.read()
     except FileNotFoundError:
         print("Arquivo 'data.html' não encontrado.")
-        return medal_data
 
     # Parse o HTML com BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -58,7 +34,6 @@ def extract_medal_data():
     # Verifique se a tabela foi encontrada
     if table is None:
         print("Tabela não encontrada.")
-        return medal_data
 
     # Extraia as linhas da tabela
     rows = table.find_all('tr')
@@ -82,13 +57,9 @@ def extract_medal_data():
                 'Silver': silver_medals,
                 'Bronze': bronze_medals,
                 'Total': total_medals
-            })
-    
-    return medal_data
+    })
 
-# função para salvar os dados em um arquivo CSV
-def save_medal_data(medal_data):
-    # Salvar os dados em um arquivo CSV
+     # Salvar os dados em um arquivo CSV
     try:
         with open('medal_data.csv', 'w', newline='', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=['Posicao', 'Country', 'Gold', 'Silver', 'Bronze', 'Total'])
@@ -96,6 +67,12 @@ def save_medal_data(medal_data):
             writer.writerows(medal_data)
     except Exception as e:
         raise RuntimeError(f"Erro ao salvar o arquivo CSV: {str(e)}")
+    # Verificar se o arquivo CSV existe
+    if not os.path.exists('medal_data.csv'):
+        return "Arquivo CSV não encontrado.", 404
 
-if __name__ == '__main__':
+    # Enviar o arquivo CSV
+    return send_file('medal_data.csv', as_attachment=True)
+
+if _name_ == '_main_':
     app.run(host='0.0.0.0', port=5000)
