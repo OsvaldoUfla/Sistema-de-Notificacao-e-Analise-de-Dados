@@ -26,23 +26,21 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-app.post('/send', async (req, res) => {
-    const { to, subject, text } = req.body;
-    console.log(req.body);
-    console.log(to, subject, text);
+function send(to, subject, text) {
+    //const { to, subject, text } = req.body;
     try {
-        await transporter.sendMail({
+        transporter.sendMail({
             from: process.env.MAIL_FROM,
             to,
             subject,
             text,
-        });
+        })
         return res.json({ message: 'Email enviado com sucesso!' });
     } catch (error) {
         console.error('Erro ao enviar e-mail:', error);
         return res.status(500).json({ message: 'Erro ao enviar e-mail!' });
     }
-});
+}
 
 // Caminho do arquivo JSON para armazenar eventos
 const eventsFilePath = path.join(__dirname, 'events.json');
@@ -90,8 +88,6 @@ async function getMedalData() {
 async function checkForMedalUpdates() {
     try {
         const oldTally = await getMedalData(); // Obter dados antigos do quadro de medalhas
-        // Realizar o scrape dos dados
-        await scrape();
         await downloadCsv(); // Baixar o arquivo CSV atualizado
         const newTally = await getMedalData(); // Obter dados atualizados do quadro de medalhas
 
@@ -146,7 +142,7 @@ app.get('/data', async (req, res) => {
         await checkForMedalUpdates();
 
         // Fazer o download do CSV atualizado
-        const csvUrl = 'http://python-server:5000/download_csv'; // URL do servidor Python para o CSV
+        const csvUrl = 'http://python-server-container:5000/download_csv'; // URL do servidor Python para o CSV
         const response = await axios.get(csvUrl, { responseType: 'stream' });
         const filePath = path.join('uploads', 'downloaded.csv');
         const writer = fs.createWriteStream(filePath);
@@ -173,7 +169,7 @@ app.get('/data', async (req, res) => {
 // Função para realizar o download do arquivo CSV
 async function downloadCsv() {
     try {
-        const response = await axios.get('http://python-server:5000/download_csv', { responseType: 'stream' });
+        const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' });
         const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
         const writer = fs.createWriteStream(filePath);
 
@@ -196,7 +192,7 @@ async function downloadCsv() {
 // Função para realizar o scrape
 function scrape(){
     try {
-        const res = axios.get('http://python-server:5000/scrape');
+        const res = axios.get('http://python-server-conteiner:5000/scrape');
         return res;
     } catch (error) {
         return error;

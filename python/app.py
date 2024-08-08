@@ -6,9 +6,17 @@ import os
 
 app = Flask(__name__)
 
-# http://python-server:5000/scrape
-# Rota para realizar o scraping dos dados
-@app.route('/scrape', methods=['GET'])
+# http://python-server:5000/download_csv
+# Rota para download do arquivo CSV    
+@app.route('/download_csv', methods=['GET'])    
+def upload_csv():
+    scrape_data()   # Chama a função que realiza o scrape e salva os dados em um arquivo CSV
+    
+    if not os.path.exists('medal_data.csv'):    # Verificar se o arquivo CSV existe
+        return "Arquivo CSV não encontrado.", 404
+    else:
+        return send_file('medal_data.csv', as_attachment=True)  # Enviar o arquivo CSV como um anexo
+
 def scrape_data():
     # Executar o script Bash para fazer o download dos dados
     try:
@@ -27,30 +35,6 @@ def scrape_data():
             return  response
     except Exception as e:
         return f"Erro ao processar os dados: {str(e)}", 500
-
-
-
-# http://python-server:5000/download_csv
-# Rota para download do arquivo CSV    
-@app.route('/download_csv', methods=['GET'])    
-def download_csv():
-    # Verificar se o arquivo CSV existe
-    if not os.path.exists('medal_data.csv'):
-        return "Arquivo CSV não encontrado.", 404
-
-    # Enviar o arquivo CSV
-    return send_file('medal_data.csv', as_attachment=True)
-
-# função para salvar os dados em um arquivo CSV
-def save_medal_data(medal_data):
-    # Salvar os dados em um arquivo CSV
-    try:
-        with open('medal_data.csv', 'w', newline='', encoding='utf-8') as file:
-            writer = csv.DictWriter(file, fieldnames=['Posicao', 'Country', 'Gold', 'Silver', 'Bronze', 'Total'])
-            writer.writeheader()
-            writer.writerows(medal_data)
-    except Exception as e:
-        raise RuntimeError(f"Erro ao salvar o arquivo CSV: {str(e)}")
 
 # função para extrair os dados da tabela HTML
 def extract_medal_data():
@@ -101,6 +85,17 @@ def extract_medal_data():
             })
     
     return medal_data
+
+# função para salvar os dados em um arquivo CSV
+def save_medal_data(medal_data):
+    # Salvar os dados em um arquivo CSV
+    try:
+        with open('medal_data.csv', 'w', newline='', encoding='utf-8') as file:
+            writer = csv.DictWriter(file, fieldnames=['Posicao', 'Country', 'Gold', 'Silver', 'Bronze', 'Total'])
+            writer.writeheader()
+            writer.writerows(medal_data)
+    except Exception as e:
+        raise RuntimeError(f"Erro ao salvar o arquivo CSV: {str(e)}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
