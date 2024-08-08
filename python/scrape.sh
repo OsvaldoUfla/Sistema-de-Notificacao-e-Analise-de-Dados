@@ -4,7 +4,7 @@
 URL="https://ge.globo.com/olimpiadas/quadro-de-medalhas-olimpiadas-paris-2024/"
 
 # Nome do arquivo onde os dados serão salvos
-OUTPUT_FILE="data1.html"
+OUTPUT_FILE="data.html"
 
 # Usando curl para fazer o download do conteúdo da página
 if curl -s "$URL" -o "$OUTPUT_FILE"; then
