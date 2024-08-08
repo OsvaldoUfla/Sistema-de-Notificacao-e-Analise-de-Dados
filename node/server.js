@@ -51,18 +51,18 @@ app.get('/data', async (req, res) => {
 });
 
 const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
+    host: process.env.MAIL_HOST1,
     port: parseInt(process.env.MAIL_PORT, 10),
-    secure: process.env.MAIL_SECURE === 'true',
+    secure: false,
     auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        user: process.env.MAIL_USER1,
+        pass: process.env.MAIL_PASS1,
     }
 });
 
 function send(to, subject, text) {
     return transporter.sendMail({
-        from: process.env.MAIL_FROM,
+        from: process.env.MAIL_FROM1,
         to,
         subject,
         text,
@@ -128,6 +128,7 @@ function getMedalData() {
 async function downloadAndSaveCsv() {
     try {
         const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' });
+        //const response = await axios.get('http://0.0.0.0:5000/download_csv', { responseType: 'stream' });
         const writer = fs.createWriteStream(filePath);  // Definição da variável writer
 
         return new Promise((resolve, reject) => {
