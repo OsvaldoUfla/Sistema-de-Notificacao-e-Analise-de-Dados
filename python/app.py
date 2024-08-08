@@ -1,12 +1,11 @@
-from flask import Flask, request, jsonify, send_file, make_response
+from flask import Flask, request, jsonify, send_file
 import subprocess
 import csv
 from bs4 import BeautifulSoup
 import os
 
-app = Flask(_name_)
+app = Flask(__name__)
 
-# http://python-server:5000/download_csv
 # Rota para download do arquivo CSV    
 @app.route('/download_csv', methods=['GET'])    
 def scrape_data():
@@ -16,14 +15,16 @@ def scrape_data():
     except subprocess.CalledProcessError as e:
         return f"Erro ao executar o script Bash: {str(e)}", 500
 
-    medal_data = [] # Inicialize medal_data para garantir que ela sempre tenha um valor
+    # Verificar se o arquivo HTML existe
+    if not os.path.exists('data.html'):
+        return "Arquivo 'data.html' não encontrado.", 404
 
     # Abrir e ler o conteúdo do arquivo HTML
     try:
         with open('data.html', 'r', encoding='utf-8') as file:
             html_content = file.read()
-    except FileNotFoundError:
-        print("Arquivo 'data.html' não encontrado.")
+    except Exception as e:
+        return f"Erro ao ler o arquivo HTML: {str(e)}", 500
 
     # Parse o HTML com BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -33,7 +34,9 @@ def scrape_data():
 
     # Verifique se a tabela foi encontrada
     if table is None:
-        print("Tabela não encontrada.")
+        return "Tabela não encontrada.", 404
+
+    medal_data = [] # Inicialize medal_data
 
     # Extraia as linhas da tabela
     rows = table.find_all('tr')
@@ -57,22 +60,27 @@ def scrape_data():
                 'Silver': silver_medals,
                 'Bronze': bronze_medals,
                 'Total': total_medals
-    })
+            })
 
-     # Salvar os dados em um arquivo CSV
+    # Verifique se medal_data foi preenchido
+    if not medal_data:
+        return "Nenhum dado de medalha encontrado.", 404
+
+    # Salvar os dados em um arquivo CSV
     try:
         with open('medal_data.csv', 'w', newline='', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=['Posicao', 'Country', 'Gold', 'Silver', 'Bronze', 'Total'])
             writer.writeheader()
             writer.writerows(medal_data)
     except Exception as e:
-        raise RuntimeError(f"Erro ao salvar o arquivo CSV: {str(e)}")
-    # Verificar se o arquivo CSV existe
+        return f"Erro ao salvar o arquivo CSV: {str(e)}", 500
+
+    # Verificar se o arquivo CSV foi criado corretamente
     if not os.path.exists('medal_data.csv'):
         return "Arquivo CSV não encontrado.", 404
 
     # Enviar o arquivo CSV
     return send_file('medal_data.csv', as_attachment=True)
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
