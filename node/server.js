@@ -5,22 +5,22 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 require('dotenv').config(); // Carregar variáveis de ambiente do arquivo .env
- 
-oldTally = []
+
+let oldTally = {}; // Inicializa oldTally como um objeto para facilitar a comparação
 const app = express();
 const port = 3000;
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
-// Middleware para analisar o corpo da requisição como JSON
-app.use(express.json());
+app.use(express.json()); // Middleware para analisar o corpo da requisição como JSON
 
 //====================================================================================================
-//Rotas
+// Rotas
+
 // Rota para a página inicial
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index.html'));
-    downloadDados();
+    await downloadDados(); // Baixar os dados ao carregar a página inicial
 });
 
 // Rota para a página de notificação
@@ -29,18 +29,19 @@ app.get('/notify', (req, res) => {
 });
 
 // Endpoint para cadastro de eventos
-app.post('/api/events', (req, res) => {
-    const { notificationType, notificationDetail } = req.body;
+app.post('/api/events', async (req, res) => {
+    const { notificationDetail } = req.body; // Apenas notificação por email
     const events = loadEvents(); // Carregar eventos do arquivo
-    const newEvent = { notificationType, notificationDetail };
+    const newEvent = { notificationType: 'email', notificationDetail }; // Presume que a notificação é sempre por email
     events.push(newEvent);
     saveEvents(events); // Salvar eventos atualizados no arquivo
     res.status(201).send('Evento cadastrado com sucesso!');
-    downloadDados();
+    await downloadDados(); // Baixar os dados ao cadastrar um evento
 });
 
 //====================================================================================================
-//Email
+// Email
+
 // Configurar o transportador do nodemailer
 const transporter = nodemailer.createTransport({
     host: process.env.MAIL_HOST,
@@ -52,10 +53,9 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// Endpoint para envio de emails
 app.post('/send', async (req, res) => {
     const { to, subject, text } = req.body;
-    console.log(req.body);
-    console.log(to, subject, text);
     try {
         await transporter.sendMail({
             from: process.env.MAIL_FROM,
@@ -71,7 +71,8 @@ app.post('/send', async (req, res) => {
 });
 
 //====================================================================================================
-//Eventos e Notificações
+// Eventos e Notificações
+
 // Caminho do arquivo JSON para armazenar eventos
 const eventsFilePath = path.join(__dirname, 'events.json');
 
@@ -91,23 +92,24 @@ function saveEvents(events) {
 
 //====================================================================================================
 // Atualização do Quadro de Medalhas
-function checkForMedalUpdates() {
+
+async function checkForMedalUpdates() {
     try {
-        downloadDados(); // Baixar o arquivo CSV atualizado
+        await downloadDados(); // Baixar o arquivo CSV atualizado
         const newTally = getMedalData(); // Obter dados atualizados do quadro de medalhas
 
-        for (let country in newTally) { 
-            const newMedals = newTally[country];
-            const oldMedals = oldTally[country] || { gold: 0, silver: 0, bronze: 0 };
+        for (const country of newTally) { 
+            const newMedals = country;
+            const oldMedals = oldTally[newMedals.country] || { gold: 0, silver: 0, bronze: 0 };
 
             // Verifica se o país ganhou novas medalhas
             if (newMedals.gold > oldMedals.gold || newMedals.silver > oldMedals.silver || newMedals.bronze > oldMedals.bronze) {
-                const message = '${newMedals.country} ganhou uma nova medalha!' // Mensagem de notificação
+                const message = `${newMedals.country} ganhou uma nova medalha!`;
                 const events = loadEvents(); // Carregar eventos do arquivo
                 for (const event of events) {
-                    send(event.notificationDetail, 'Nova Medalha!', message); // Enviar notificação para cada evento
+                    await send(event.notificationDetail, 'Nova Medalha!', message); // Enviar notificação para cada evento
                 }
-                oldTally = newMedals; // Atualizar o quadro de medalhas antigo
+                oldTally[newMedals.country] = newMedals; // Atualizar o quadro de medalhas antigo
             }
         }
         
@@ -130,44 +132,38 @@ function getMedalData() {
                 bronze: parseInt(bronze) || 0,
                 total: parseInt(total) || 0
             };
-        }).filter(d => d.country);
+        }).filter(d => d.country); // Filtra linhas vazias ou inválidas
         return result;
     } catch (err) {
-        throw new Error('Erro ao processar o arquivo CSV: ${err.message}');
+        throw new Error(`Erro ao processar o arquivo CSV: ${err.message}`);
     }
 }
 
 // Função para requisitar o download do arquivo CSV e processar os dados
-function downloadDados(){
+async function downloadDados(){
     try {
-        // Fazer o download do CSV atualizado
-        try {
-            const response = axios.get('http://python-server:5000/download_csv', { responseType: 'stream' });
-            const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
-            const writer = fs.createWriteStream(filePath);
-    
-            return new Promise((resolve, reject) => {
-                response.data.pipe(writer);
-                writer.on('finish', () => {
-                    console.log('CSV baixado e salvo em:', filePath);
-                    resolve(); // Resolva a Promise quando a escrita estiver concluída
-                });
-                writer.on('error', (err) => {
-                    console.error('Erro ao salvar o arquivo CSV:', err);
-                    reject(err);   // Rejeite a Promise em caso de erro
-                });
+        const response = await axios.get('http://python-server:5000/download_csv', { responseType: 'stream' });
+        const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
+        const writer = fs.createWriteStream(filePath);
+
+        return new Promise((resolve, reject) => {
+            response.data.pipe(writer);
+            writer.on('finish', () => {
+                console.log('CSV baixado e salvo em:', filePath);
+                resolve(); // Resolva a Promise quando a escrita estiver concluída
             });
-        } catch (err) {
-            throw new Error('Erro ao realizar o download do arquivo CSV: ${err.message}');
-        }
-    }
-    catch (err) {
-        console.error('Erro ao processar o arquivo CSV:', err);
+            writer.on('error', (err) => {
+                console.error('Erro ao salvar o arquivo CSV:', err);
+                reject(err);   // Rejeite a Promise em caso de erro
+            });
+        });
+    } catch (err) {
+        throw new Error(`Erro ao realizar o download do arquivo CSV: ${err.message}`);
     }
 }
 
-setInterval(checkForMedalUpdates, 25000); // Verificar atualizações a cada 25 segundos
-
+// Verificar atualizações a cada 25 segundos
+setInterval(checkForMedalUpdates, 25000);
 
 // Iniciar o servidor
 app.listen(port, () => {
