@@ -128,7 +128,7 @@ function getMedalData() {
 async function downloadAndSaveCsv() {
     try {
         const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' });
-        //const writer = fs.createWriteStream(filePath);
+        const writer = fs.createWriteStream(filePath);  // Definição da variável writer
 
         return new Promise((resolve, reject) => {
             response.data.pipe(writer);
@@ -146,7 +146,8 @@ async function downloadAndSaveCsv() {
         throw new Error(`Erro ao baixar o arquivo CSV: ${err.message}`);
     }
 }
-setInterval(checkForMedalUpdates, 5000);    // Verifica a cada 5 segundos
+
+setInterval(checkForMedalUpdates, 30000);    // Verifica a cada 30 segundos
 
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
