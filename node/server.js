@@ -17,7 +17,6 @@ app.use(expressJson());
 
 app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index.html'));
-    await checkForMedalUpdates();
     console.log('Quadro de medalhas atualizado!');
 });
 
@@ -128,18 +127,26 @@ function getMedalData() {
 
 async function downloadAndSaveCsv() {
     try {
-        const response = await axios.get('http://python-server:5000/download_csv', { responseType: 'stream' });
-        const writer = fs.createWriteStream(filePath);
+        const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' });
+        //const writer = fs.createWriteStream(filePath);
 
         return new Promise((resolve, reject) => {
             response.data.pipe(writer);
-            writer.on('finish', () => resolve());
-            writer.on('error', (err) => reject(err));
+            writer.on('finish', () => {
+                console.log('Arquivo CSV salvo com sucesso!');
+                resolve();
+            });
+            writer.on('error', (err) => {
+                console.error('Erro ao salvar o arquivo:', err);
+                reject(err);
+            });
         });
     } catch (err) {
+        console.error(`Erro ao baixar o arquivo CSV: ${err.message}`);
         throw new Error(`Erro ao baixar o arquivo CSV: ${err.message}`);
     }
 }
+setInterval(checkForMedalUpdates, 5000);    // Verifica a cada 5 segundos
 
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
