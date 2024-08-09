@@ -182,8 +182,7 @@ function getMedalData() {
 // Função para requisitar o download do arquivo CSV
 async function downloadAndSaveCsv() {
     try {
-        //const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' })
-        const response = await axios.get('http://0.0.0.0:5000/download_csv', { responseType: 'stream' })
+        const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' })
 
         const writer = fs.createWriteStream(filePath)
 
