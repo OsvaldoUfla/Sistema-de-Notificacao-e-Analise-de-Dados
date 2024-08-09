@@ -1,48 +1,113 @@
-const express = require('express');
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
-const expressJson = require('express').json;
-const { Telegraf } = require('telegraf');
-const csv = require('csv-parser');
-require('dotenv').config();
+const express = require('express')
+const axios = require('axios')
+const fs = require('fs')
+const path = require('path')
+const expressJson = require('express').json
+const { Telegraf } = require('telegraf')
+const { message } = require('telegraf/filters')
+const csv = require('csv-parser')
+require('dotenv').config()
 
 
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
-const app = express();
-const port = 3000;
-const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
+const bot = new Telegraf(process.env.BOT_TOKEN)
+const app = express()
+const port = 3000
+
+const filePath = path.join(__dirname, 'uploads', 'downloaded.csv')// Caminho para o arquivo CSV que contém os dados das medalhas
+const FILE_PATH_SUBSCRIBED = './subscribedChats.json'; // Caminho para o arquivo JSON que armazena os chats inscritos
+const eventsFilePath = path.join(__dirname, 'events.json') // Caminho para o arquivo JSON que armazena os eventos
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(expressJson());
+app.use(expressJson())
 
-app.get('/telegram', (req, res) => {
+//====================================================================================================
+// BOT TELEGRAM
+
+// Função para verificar e criar o arquivo JSON se não existir
+function ensureFileExists() {
+    if (!fs.existsSync(FILE_PATH_SUBSCRIBED)) {
+        fs.writeFileSync(FILE_PATH_SUBSCRIBED, JSON.stringify([], null, 2), 'utf8');
+    }
+}
+
+// Função para carregar os IDs das conversas do arquivo JSON
+function loadSubscribedChats() {
     try {
-        bot.telegram.sendMessage(process.env.CHAT_ID, 'O Leo é o juninho aqui, se a mensagem chegou é pq deu certo!');
-        res.send('Mensagem enviada para o Telegram!');
+        ensureFileExists(); // Garante que o arquivo exista
+        const data = fs.readFileSync(FILE_PATH_SUBSCRIBED, 'utf8');
+        return JSON.parse(data);
     } catch (err) {
-        res.status(500).send(err.message);
+        console.error('Erro ao carregar o arquivo JSON:', err);
+        return [];
+    }
+}
+
+// Função para salvar os IDs das conversas no arquivo JSON
+function saveSubscribedChats(subscribedChats) {
+    try {
+        fs.writeFileSync(FILE_PATH_SUBSCRIBED, JSON.stringify(subscribedChats, null, 2), 'utf8');
+    } catch (err) {
+        console.error('Erro ao salvar no arquivo JSON:', err);
+    }
+}
+
+let subscribedChats = loadSubscribedChats();
+
+bot.start((ctx) => ctx.reply('Bem-vindo! Como posso ajudar você hoje?'));
+bot.help((ctx) => ctx.reply('Envie-me um sticker'));
+
+const servicesList = `
+Aqui estão os serviços que posso oferecer:
+1. Fazer inscrição de notificações.
+2. Cancelar inscrição de notificações.
+
+Basta digitar o número ou o nome do serviço que você está interessado!
+`;
+
+// Responde com a lista de serviços para qualquer mensagem recebida
+bot.on('text', (ctx) => {
+    const message = ctx.message.text.trim();
+    const chatId = ctx.chat.id;
+
+    if (message === '1') {
+        if (!subscribedChats.includes(chatId)) {
+            subscribedChats.push(chatId);
+            saveSubscribedChats(subscribedChats); // Salva no arquivo JSON
+            ctx.reply('Você foi inscrito com sucesso para receber notificações!');
+        } else {
+            ctx.reply('Você já está inscrito para receber notificações.');
+        }
+    } else if (message === '2') {
+        subscribedChats = subscribedChats.filter(id => id !== chatId);
+        saveSubscribedChats(subscribedChats); // Salva no arquivo JSON
+        ctx.reply('Você foi removido da lista de notificações.');
+    } else {
+        ctx.reply(servicesList);
     }
 });
 
+bot.on('sticker', (ctx) => ctx.reply('👍'));
+bot.launch();
+
+//====================================================================================================
 
 app.get('/', async (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index.html'));
+    res.sendFile(path.join(__dirname, 'public/index.html'))
     console.log('Quadro de medalhas atualizado!');
 });
 
 app.get('/notify', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/notify.html'));
+    res.sendFile(path.join(__dirname, 'public/notify.html'))
 });
 
 app.post('/api/events', async (req, res) => {
-    const { notificationDetail } = req.body;
-    const events = loadEvents();
-    const newEvent = { notificationType: 'telegram', notificationDetail };
-    events.push(newEvent);
-    saveEvents(events);
-    res.status(201).send('Evento cadastrado com sucesso!');
+    const { notificationDetail } = req.body
+    const events = loadEvents()
+    const newEvent = { notificationType: 'telegram', notificationDetail }
+    events.push(newEvent)
+    saveEvents(events)
+    res.status(201).send('Evento cadastrado com sucesso!')
 });
 
 app.get('/data', async (req, res) => {
@@ -52,64 +117,46 @@ app.get('/data', async (req, res) => {
         .pipe(csv())
         .on('data', (data) => results.push(data))
         .on('end', () => {
-          res.json(results);
+          res.json(results)
         })
         .on('error', (err) => {
-          res.status(500).json({ error: err.message });
-        });
+          res.status(500).json({ error: err.message })
+        })
     } catch (err) {
-        res.status(500).send(err.message);
+        res.status(500).send(err.message)
     }
 });
 
-function send(to, message) {
-    return bot.sendMessage(to, message);
-}
-
-const eventsFilePath = path.join(__dirname, 'events.json');
-
-function loadEvents() {
-    if (fs.existsSync(eventsFilePath)) {
-        const data = fs.readFileSync(eventsFilePath, 'utf-8');
-        return JSON.parse(data);
-    }
-    return [];
-}
-
-function saveEvents(events) {
-    fs.writeFileSync(eventsFilePath, JSON.stringify(events, null, 2), 'utf-8');
-}
-
 async function checkForMedalUpdates() {
     try {
-        const oldTally = getMedalData();
+        const oldTally = getMedalData()
         await downloadAndSaveCsv();
-        const newTally = getMedalData();
+        const newTally = getMedalData()
 
         for (const country of newTally) { 
-            const newMedals = country;
-            const oldMedals = oldTally[newMedals.country] || { gold: 0, silver: 0, bronze: 0 };
+            const newMedals = country
+            const oldMedals = oldTally[newMedals.country] || { gold: 0, silver: 0, bronze: 0 }
 
             if (newMedals.gold > oldMedals.gold || newMedals.silver > oldMedals.silver || newMedals.bronze > oldMedals.bronze) {
                 const message = `${newMedals.country} ganhou uma nova medalha!`;
-                const events = loadEvents();
+                const events = loadSubscribedChats()
                 for (const event of events) {
-                    await send(event.notificationDetail, message);
+                    bot.telegram.sendMessage(event, message)
                 }
-                oldTally[newMedals.country] = newMedals;
+                oldTally[newMedals.country] = newMedals
             }
         }
     } catch (err) {
-        console.error('Erro ao atualizar o quadro de medalhas:', err);
+        console.error('Erro ao atualizar o quadro de medalhas:', err)
     }
 }
 
 function getMedalData() {
     try {
-        const data = fs.readFileSync(filePath, 'utf-8');
-        const lines = data.split('\n').slice(1);
+        const data = fs.readFileSync(filePath, 'utf-8')
+        const lines = data.split('\n').slice(1)
         return lines.map(line => {
-            const [posicao, country, gold, silver, bronze, total] = line.split(',');
+            const [posicao, country, gold, silver, bronze, total] = line.split(',')
             return { 
                 country, 
                 gold: parseInt(gold) || 0,
@@ -117,36 +164,36 @@ function getMedalData() {
                 bronze: parseInt(bronze) || 0,
                 total: parseInt(total) || 0
             };
-        }).filter(d => d.country);
+        }).filter(d => d.country)
     } catch (err) {
-        throw new Error(`Erro ao processar o arquivo CSV: ${err.message}`);
+        throw new Error(`Erro ao processar o arquivo CSV: ${err.message}`)
     }
 }
 
 async function downloadAndSaveCsv() {
     try {
-        const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' });
-        const writer = fs.createWriteStream(filePath);
+        const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' })
+        const writer = fs.createWriteStream(filePath)
 
         return new Promise((resolve, reject) => {
-            response.data.pipe(writer);
+            response.data.pipe(writer)
             writer.on('finish', () => {
-                console.log('Arquivo CSV salvo com sucesso!');
-                resolve();
+                console.log('Arquivo CSV salvo com sucesso!')
+                resolve()
             });
             writer.on('error', (err) => {
-                console.error('Erro ao salvar o arquivo:', err);
-                reject(err);
+                console.error('Erro ao salvar o arquivo:', err)
+                reject(err)
             });
         });
     } catch (err) {
-        console.error(`Erro ao baixar o arquivo CSV: ${err.message}`);
-        throw new Error(`Erro ao baixar o arquivo CSV: ${err.message}`);
+        console.error(`Erro ao baixar o arquivo CSV: ${err.message}`)
+        throw new Error(`Erro ao baixar o arquivo CSV: ${err.message}`)
     }
 }
 
 setInterval(checkForMedalUpdates, 30000);    // Verifica a cada 30 segundos
 
 app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
-});
+    console.log(`Servidor rodando na porta ${port}`)
+})
