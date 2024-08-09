@@ -3,12 +3,13 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const expressJson = require('express').json;
-import { Telegraf } from 'telegraf'
-import { message } from 'telegraf/filters'
+const { Telegraf } = require('telegraf');
 const csv = require('csv-parser');
 require('dotenv').config();
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+
+
+const bot = new Telegraf(process.env.BOT_TOKEN);
 const app = express();
 const port = 3000;
 const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
@@ -16,7 +17,15 @@ const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressJson());
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+app.get('/telegram', (req, res) => {
+    try {
+        bot.telegram.sendMessage(process.env.CHAT_ID, 'O Leo é o juninho aqui, se a mensagem chegou é pq deu certo!');
+        res.send('Mensagem enviada para o Telegram!');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 
 app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index.html'));
