@@ -3,40 +3,44 @@ import subprocess
 import csv
 from bs4 import BeautifulSoup
 import os
-import time
+import logging
 
 app = Flask(__name__)
 
-def scrape_data():
+# Configuração do logger
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Função responsável por executar o script de scraping
+def run_scraping_script(script_path='./scrape.sh'):
     try:
-        subprocess.run(['./scrape.sh'], check=True)
-        print("Scraping concluído com sucesso.")
+        subprocess.run([script_path], check=True)
+        logging.info("Scraping concluído com sucesso.")
     except subprocess.CalledProcessError as e:
-        print(f"Erro ao executar o script Bash: {str(e)}")
-        return Response(f"Erro ao executar o script Bash: {str(e)}", status=500)
+        error_message = f"Erro ao executar o script Bash: {str(e)}"
+        logging.error(error_message)
+        return error_message
 
-@app.route('/download_csv', methods=['GET'])    
-def download_csv():
-    scrape_data()  # Chama a função scrape_data
-
-    # Verifica se o arquivo HTML foi gerado
-    if not os.path.exists('data.html'):
-        print("Arquivo 'data.html' não encontrado após scraping.")
-        return Response("Arquivo 'data.html' não encontrado.", status=404)
-
+# Função para ler o conteúdo HTML do arquivo gerado pelo scraping
+def read_html_file(file_path='data.html'):
+    if not os.path.exists(file_path):
+        logging.error(f"Arquivo '{file_path}' não encontrado.")
+        return None, "Arquivo HTML não encontrado."
     try:
-        with open('data.html', 'r', encoding='utf-8') as file:
-            html_content = file.read()
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return file.read(), None
     except Exception as e:
-        print(f"Erro ao ler o arquivo HTML: {str(e)}")
-        return Response(f"Erro ao ler o arquivo HTML: {str(e)}", status=500)
+        error_message = f"Erro ao ler o arquivo HTML: {str(e)}"
+        logging.error(error_message)
+        return None, error_message
 
+# Função para extrair dados da tabela no HTML usando BeautifulSoup
+def extract_medal_data(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     table = soup.find('table', {'aria-label': 'Quadro de medalhas Olimpíadas Paris 2024. Lista com 5 países.'})
 
     if table is None:
-        print("Tabela não encontrada no HTML.")
-        return Response("Tabela não encontrada.", status=404)
+        logging.error("Tabela não encontrada no HTML.")
+        return None, "Tabela não encontrada."
 
     medal_data = []
     rows = table.find_all('tr')
@@ -44,44 +48,66 @@ def download_csv():
     for row in rows:
         cells = row.find_all('td')
         if len(cells) >= 6:
-            country_Pos = cells[0].get_text(strip=True)
-            country_name = cells[1].get_text(strip=True)
-            gold_medals = cells[2].get_text(strip=True)
-            silver_medals = cells[3].get_text(strip=True)
-            bronze_medals = cells[4].get_text(strip=True)
-            total_medals = cells[5].get_text(strip=True)
-
             medal_data.append({
-                'Posicao': country_Pos,
-                'Country': country_name,
-                'Gold': gold_medals,
-                'Silver': silver_medals,
-                'Bronze': bronze_medals,
-                'Total': total_medals
+                'Posicao': cells[0].get_text(strip=True),
+                'Country': cells[1].get_text(strip=True),
+                'Gold': cells[2].get_text(strip=True),
+                'Silver': cells[3].get_text(strip=True),
+                'Bronze': cells[4].get_text(strip=True),
+                'Total': cells[5].get_text(strip=True)
             })
 
     if not medal_data:
-        print("Nenhum dado de medalha encontrado.")
-        return Response("Nenhum dado de medalha encontrado.", status=404)
+        logging.error("Nenhum dado de medalha encontrado.")
+        return None, "Nenhum dado de medalha encontrado."
+    
+    return medal_data, None
 
+# Função para salvar os dados extraídos em um arquivo CSV
+def save_to_csv(medal_data, csv_file_path='medal_data.csv'):
     try:
-        with open('medal_data.csv', 'w', newline='', encoding='utf-8') as file:
+        with open(csv_file_path, 'w', newline='', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=['Posicao', 'Country', 'Gold', 'Silver', 'Bronze', 'Total'])
             writer.writeheader()
             writer.writerows(medal_data)
-        print("Arquivo CSV criado com sucesso.")
+        logging.info("Arquivo CSV criado com sucesso.")
     except Exception as e:
-        print(f"Erro ao salvar o arquivo CSV: {str(e)}")
-        return Response(f"Erro ao salvar o arquivo CSV: {str(e)}", status=500)
+        error_message = f"Erro ao salvar o arquivo CSV: {str(e)}"
+        logging.error(error_message)
+        return error_message
+    
+    if not os.path.exists(csv_file_path):
+        logging.error("Arquivo CSV não encontrado após tentativa de criação.")
+        return "Arquivo CSV não encontrado."
 
-    if not os.path.exists('medal_data.csv'):
-        print("Arquivo CSV não encontrado.")
-        return Response("Arquivo CSV não encontrado.", status=404)
+    return None
 
+@app.route('/download_csv', methods=['GET'])
+def download_csv():
+    # Executa o script de scraping
+    script_error = run_scraping_script()
+    if script_error:
+        return Response(script_error, status=500)
+
+    # Lê o conteúdo do arquivo HTML
+    html_content, html_error = read_html_file()
+    if html_error:
+        return Response(html_error, status=404)
+
+    # Extrai os dados de medalhas
+    medal_data, extract_error = extract_medal_data(html_content)
+    if extract_error:
+        return Response(extract_error, status=404)
+
+    # Salva os dados em um arquivo CSV
+    csv_error = save_to_csv(medal_data)
+    if csv_error:
+        return Response(csv_error, status=500)
+
+    # Retorna o arquivo CSV para download
     return send_file('medal_data.csv', as_attachment=True)
 
 if __name__ == '__main__':
-    # Verifica se o servidor está rodando
-    print("Iniciando o servidor Flask...")
+    logging.info("Iniciando o servidor Flask...")
     app.run(host='0.0.0.0', port=5000)
-    print("Servidor Flask em execução.")
+    logging.info("Servidor Flask em execução.")
