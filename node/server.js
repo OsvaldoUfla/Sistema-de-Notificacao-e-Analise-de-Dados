@@ -24,7 +24,7 @@ app.use(expressJson())
 //====================================================================================================
 // BOT TELEGRAM
 
-const bot = new Telegraf('7422147564:AAHsn00bdlMKsgmwRVLDnaYH9apPYEEiVJ4')
+const bot = new Telegraf(process.env.BOT_TOKEN)
 
 const FILE_PATH_SUBSCRIBED = './subscribedChats.json'; // Caminho para o arquivo JSON que armazena os chats inscritos
 
