@@ -1,32 +1,32 @@
-const express = require('express')
-const axios = require('axios')
-const fs = require('fs')
-const path = require('path')
-const expressJson = require('express').json
-const { Telegraf } = require('telegraf')
-const { message } = require('telegraf/filters')
-const csv = require('csv-parser')
-require('dotenv').config()
+const express = require('express');
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const expressJson = require('express').json;
+const { Telegraf } = require('telegraf');
+const csv = require('csv-parser');
+require('dotenv').config();
 
+const app = express();
+const port = process.env.PORT || 3000;
 
+// Caminho para o arquivo CSV que contém os dados das medalhas
+const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
 
-
-const app = express()
-const port = 3000
-
-const filePath = path.join(__dirname, 'uploads', 'downloaded.csv')// Caminho para o arquivo CSV que contém os dados das medalhas
-
-
+// Verifica e cria a pasta de uploads, se necessário
+if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
+    fs.mkdirSync(path.join(__dirname, 'uploads'));
+}
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(expressJson())
+app.use(expressJson());
 
 //====================================================================================================
 // BOT TELEGRAM
 
-const bot = new Telegraf(process.env.BOT_TOKEN)
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-const FILE_PATH_SUBSCRIBED = './subscribedChats.json'; // Caminho para o arquivo JSON que armazena os chats inscritos
+const FILE_PATH_SUBSCRIBED = path.join(__dirname, 'subscribedChats.json'); // Caminho para o arquivo JSON que armazena os chats inscritos
 
 // Função para verificar e criar o arquivo JSON se não existir
 function ensureFileExists() {
@@ -98,74 +98,73 @@ bot.launch();
 // ROTAS
 
 app.get('/', async (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index.html'))
+    res.sendFile(path.join(__dirname, 'public/index.html'));
     console.log('Quadro de medalhas atualizado!');
 });
 
 app.get('/notify', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/notify.html'))
+    res.sendFile(path.join(__dirname, 'public/notify.html'));
 });
 
 app.post('/api/events', async (req, res) => {
-    const { notificationDetail } = req.body
-    const events = loadEvents()
-    const newEvent = { notificationType: 'telegram', notificationDetail }
-    events.push(newEvent)
-    saveEvents(events)
-    res.status(201).send('Evento cadastrado com sucesso!')
+    const { notificationDetail } = req.body;
+    const events = loadEvents();
+    const newEvent = { notificationType: 'telegram', notificationDetail };
+    events.push(newEvent);
+    saveEvents(events);
+    res.status(201).send('Evento cadastrado com sucesso!');
 });
 
 app.get('/data', async (req, res) => {
     const results = [];
     try {
         fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (data) => results.push(data))
-        .on('end', () => {
-          res.json(results)
-        })
-        .on('error', (err) => {
-          res.status(500).json({ error: err.message })
-        })
+            .pipe(csv())
+            .on('data', (data) => results.push(data))
+            .on('end', () => {
+                res.json(results);
+            })
+            .on('error', (err) => {
+                res.status(500).json({ error: err.message });
+            });
     } catch (err) {
-        res.status(500).send(err.message)
+        res.status(500).send(err.message);
     }
 });
 
 //====================================================================================================
 
-// Função para verificar se existte novas medalhas
+// Função para verificar se existem novas medalhas
 async function checkForMedalUpdates() {
     try {
-        const oldTally = getMedalData()
+        const oldTally = getMedalData();
         await downloadAndSaveCsv();
-        const newTally = getMedalData()
+        const newTally = getMedalData();
 
-        for (const country of newTally) { 
-            const newMedals = country
-            const oldMedals = oldTally.find(item => item.country === newMedals.country) || { gold: 0, silver: 0, bronze: 0 }
+        const oldTallyMap = new Map(oldTally.map(item => [item.country, item]));
+
+        for (const newMedals of newTally) {
+            const oldMedals = oldTallyMap.get(newMedals.country) || { gold: 0, silver: 0, bronze: 0 };
 
             if (newMedals.gold > oldMedals.gold || newMedals.silver > oldMedals.silver || newMedals.bronze > oldMedals.bronze) {
                 const message = `${newMedals.country} ganhou uma nova medalha!`;
-                const events = loadSubscribedChats()
-                for (const event of events) {
-                    bot.telegram.sendMessage(event, message)
+                for (const chatId of subscribedChats) {
+                    bot.telegram.sendMessage(chatId, message);
                 }
-                oldTally[newMedals.country] = newMedals
             }
         }
     } catch (err) {
-        console.error('Erro ao atualizar o quadro de medalhas:', err)
+        console.error('Erro ao atualizar o quadro de medalhas:', err);
     }
 }
 
 // Função para carregar a quantidade de medalhas de cada país a partir do arquivo CSV
 function getMedalData() {
     try {
-        const data = fs.readFileSync(filePath, 'utf-8')
-        const lines = data.split('\n').slice(1)
+        const data = fs.readFileSync(filePath, 'utf-8');
+        const lines = data.split('\n').slice(1);
         return lines.map(line => {
-            const [posicao, country, gold, silver, bronze, total] = line.split(',')
+            const [posicao, country, gold, silver, bronze, total] = line.split(',');
             return { 
                 country, 
                 gold: parseInt(gold) || 0,
@@ -173,39 +172,45 @@ function getMedalData() {
                 bronze: parseInt(bronze) || 0,
                 total: parseInt(total) || 0
             };
-        }).filter(d => d.country)
+        }).filter(d => d.country);
     } catch (err) {
-        throw new Error(`Erro ao processar o arquivo CSV: ${err.message}`)
+        throw new Error(`Erro ao processar o arquivo CSV: ${err.message}`);
     }
 }
 
 // Função para requisitar o download do arquivo CSV
 async function downloadAndSaveCsv() {
     try {
-        const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' })
+        const response = await axios.get(process.env.CSV_URL || 'http://python-server-container:5000/download_csv', { responseType: 'stream' });
 
-        const writer = fs.createWriteStream(filePath)
+        const writer = fs.createWriteStream(filePath);
 
         return new Promise((resolve, reject) => {
-            response.data.pipe(writer)
+            response.data.pipe(writer);
             writer.on('finish', () => {
-                console.log('Arquivo CSV salvo com sucesso!')
-                resolve()
+                console.log('Arquivo CSV salvo com sucesso!');
+                resolve();
             });
             writer.on('error', (err) => {
-                console.error('Erro ao salvar o arquivo:', err)
-                reject(err)
+                console.error('Erro ao salvar o arquivo:', err);
+                reject(err);
             });
         });
     } catch (err) {
-        console.error(`Erro ao baixar o arquivo CSV: ${err.message}`)
-        throw new Error(`Erro ao baixar o arquivo CSV: ${err.message}`)
+        if (err.response) {
+            console.error(`Erro ao baixar o arquivo CSV: ${err.message}. Status Code: ${err.response.status}. URL: ${err.config.url}`);
+        } else if (err.request) {
+            console.error(`Erro na requisição ao baixar o arquivo CSV: ${err.message}. Nenhuma resposta recebida.`);
+        } else {
+            console.error(`Erro inesperado ao baixar o arquivo CSV: ${err.message}`);
+        }
+        throw new Error(`Erro ao baixar o arquivo CSV: ${err.message}`);
     }
 }
-
 
 setInterval(checkForMedalUpdates, 30000);    // Verifica a cada 30 segundos
 
 app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`)
-})
+    console.log(`Servidor rodando na porta ${port}`);
+});
+
