@@ -10,19 +10,23 @@ require('dotenv').config()
 
 
 
-const bot = new Telegraf(process.env.BOT_TOKEN)
+
 const app = express()
 const port = 3000
 
 const filePath = path.join(__dirname, 'uploads', 'downloaded.csv')// Caminho para o arquivo CSV que contém os dados das medalhas
-const FILE_PATH_SUBSCRIBED = './subscribedChats.json'; // Caminho para o arquivo JSON que armazena os chats inscritos
-const eventsFilePath = path.join(__dirname, 'events.json') // Caminho para o arquivo JSON que armazena os eventos
+
+
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressJson())
 
 //====================================================================================================
 // BOT TELEGRAM
+
+const bot = new Telegraf('7422147564:AAHsn00bdlMKsgmwRVLDnaYH9apPYEEiVJ4')
+
+const FILE_PATH_SUBSCRIBED = './subscribedChats.json'; // Caminho para o arquivo JSON que armazena os chats inscritos
 
 // Função para verificar e criar o arquivo JSON se não existir
 function ensureFileExists() {
@@ -91,6 +95,7 @@ bot.on('sticker', (ctx) => ctx.reply('👍'));
 bot.launch();
 
 //====================================================================================================
+// ROTAS
 
 app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index.html'))
@@ -127,6 +132,9 @@ app.get('/data', async (req, res) => {
     }
 });
 
+//====================================================================================================
+
+// Função para verificar se existte novas medalhas
 async function checkForMedalUpdates() {
     try {
         const oldTally = getMedalData()
@@ -135,7 +143,7 @@ async function checkForMedalUpdates() {
 
         for (const country of newTally) { 
             const newMedals = country
-            const oldMedals = oldTally[newMedals.country] || { gold: 0, silver: 0, bronze: 0 }
+            const oldMedals = oldTally.find(item => item.country === newMedals.country) || { gold: 0, silver: 0, bronze: 0 }
 
             if (newMedals.gold > oldMedals.gold || newMedals.silver > oldMedals.silver || newMedals.bronze > oldMedals.bronze) {
                 const message = `${newMedals.country} ganhou uma nova medalha!`;
@@ -151,6 +159,7 @@ async function checkForMedalUpdates() {
     }
 }
 
+// Função para carregar a quantidade de medalhas de cada país a partir do arquivo CSV
 function getMedalData() {
     try {
         const data = fs.readFileSync(filePath, 'utf-8')
@@ -170,9 +179,12 @@ function getMedalData() {
     }
 }
 
+// Função para requisitar o download do arquivo CSV
 async function downloadAndSaveCsv() {
     try {
-        const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' })
+        //const response = await axios.get('http://python-server-container:5000/download_csv', { responseType: 'stream' })
+        const response = await axios.get('http://0.0.0.0:5000/download_csv', { responseType: 'stream' })
+
         const writer = fs.createWriteStream(filePath)
 
         return new Promise((resolve, reject) => {
@@ -191,6 +203,7 @@ async function downloadAndSaveCsv() {
         throw new Error(`Erro ao baixar o arquivo CSV: ${err.message}`)
     }
 }
+
 
 setInterval(checkForMedalUpdates, 30000);    // Verifica a cada 30 segundos
 

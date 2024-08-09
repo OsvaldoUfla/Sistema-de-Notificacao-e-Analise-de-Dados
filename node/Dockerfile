@@ -1,5 +1,5 @@
 # Dockerfile para o servidor Node.js
-FROM node:14
+FROM node:latest
 
 # Criar diretório de trabalho
 WORKDIR /app
