@@ -1,14 +1,22 @@
 # Dockerfile para o servidor Node.js
-FROM node:latest
+FROM node:stable
+
+# Instalar dependências necessárias para o canvas
+RUN apt-get update && apt-get install -y \
+    libcairo2-dev \
+    libjpeg-dev \
+    libpango1.0-dev \
+    libgif-dev \
+    build-essential
 
 # Criar diretório de trabalho
 WORKDIR /app
 
 # Copiar package.json e instalar dependências
-#COPY package*.json ./
+COPY package*.json ./
 
 # Instala as dependências do projeto
-#RUN npm install
+RUN npm install
 
 # Expor a porta em que o servidor estará ouvindo
 EXPOSE 3000
