@@ -5,10 +5,10 @@ FROM node:latest
 WORKDIR /app
 
 # Copiar package.json e instalar dependências
-COPY package*.json ./
+#COPY package*.json ./
 
 # Instala as dependências do projeto
-RUN npm install
+#RUN npm install
 
 # Expor a porta em que o servidor estará ouvindo
 EXPOSE 3000
