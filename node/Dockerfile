@@ -1,5 +1,5 @@
 # Dockerfile para o servidor Node.js
-FROM node:stable
+FROM node:lts
 
 # Instalar dependências necessárias para o canvas
 RUN apt-get update && apt-get install -y \

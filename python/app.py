@@ -7,35 +7,36 @@ import logging
 
 app = Flask(__name__)
 
+
 # Configuração do logger
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Função responsável por executar o script de scraping
-def run_scraping_script(script_path='./scrape.sh'):
+def run_scraping_script():
     try:
-        subprocess.run([script_path], check=True)
-        logging.info("Scraping concluído com sucesso.")
+        subprocess.run('./scrape.sh', check=True)
     except subprocess.CalledProcessError as e:
         error_message = f"Erro ao executar o script Bash: {str(e)}"
         logging.error(error_message)
-        return error_message
 
-# Função para ler o conteúdo HTML do arquivo gerado pelo scraping
-def read_html_file(file_path='data.html'):
+
+def extract_medal_data_from_file(file_path='data.html'):
+    # Verifica se o arquivo existe
     if not os.path.exists(file_path):
         logging.error(f"Arquivo '{file_path}' não encontrado.")
-        return None, "Arquivo HTML não encontrado."
     try:
+        # Abre e lê o conteúdo do arquivo HTML
         with open(file_path, 'r', encoding='utf-8') as file:
-            return file.read(), None
+            html_content = file.read()
     except Exception as e:
         error_message = f"Erro ao ler o arquivo HTML: {str(e)}"
         logging.error(error_message)
         return None, error_message
 
-# Função para extrair dados da tabela no HTML usando BeautifulSoup
-def extract_medal_data(html_content):
+    # Usa BeautifulSoup para analisar o HTML
     soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Procura a tabela específica no HTML
     table = soup.find('table', {'aria-label': 'Quadro de medalhas Olimpíadas Paris 2024. Lista com 5 países.'})
 
     if table is None:
@@ -61,51 +62,53 @@ def extract_medal_data(html_content):
         logging.error("Nenhum dado de medalha encontrado.")
         return None, "Nenhum dado de medalha encontrado."
     
-    return medal_data, None
+    return medal_data
 
-# Função para salvar os dados extraídos em um arquivo CSV
 def save_to_csv(medal_data, csv_file_path='medal_data.csv'):
     try:
+        # Abre o arquivo CSV para escrita
         with open(csv_file_path, 'w', newline='', encoding='utf-8') as file:
+            # Define os campos (cabeçalhos) do CSV
             writer = csv.DictWriter(file, fieldnames=['Posicao', 'Country', 'Gold', 'Silver', 'Bronze', 'Total'])
+            # Escreve o cabeçalho no CSV
             writer.writeheader()
+            # Escreve os dados no CSV
             writer.writerows(medal_data)
+        # Loga a mensagem de sucesso
         logging.info("Arquivo CSV criado com sucesso.")
+    
     except Exception as e:
+        # Captura e loga qualquer erro que ocorra
         error_message = f"Erro ao salvar o arquivo CSV: {str(e)}"
         logging.error(error_message)
         return error_message
-    
-    if not os.path.exists(csv_file_path):
-        logging.error("Arquivo CSV não encontrado após tentativa de criação.")
-        return "Arquivo CSV não encontrado."
 
-    return None
+    # Verifica se o arquivo foi criado corretamente
+    if not os.path.exists(csv_file_path):
+        error_message = "Arquivo CSV não encontrado após tentativa de criação."
+        logging.error(error_message)
+        return error_message
+
 
 @app.route('/download_csv', methods=['GET'])
 def download_csv():
-    # Executa o script de scraping
-    script_error = run_scraping_script()
-    if script_error:
-        return Response(script_error, status=500)
+    run_scraping_script()
+    extraido = extract_medal_data_from_file()
 
-    # Lê o conteúdo do arquivo HTML
-    html_content, html_error = read_html_file()
-    if html_error:
-        return Response(html_error, status=404)
+    if extraido is None:
+        logging.error("Extração de dados falhou.")
+    else:
+        # Verifica se 'extraido' é uma lista de dicionários antes de passar para 'save_to_csv'
+        if isinstance(extraido, list) and all(isinstance(item, dict) for item in extraido):
+            save_to_csv(extraido)
+            logging.info("Extração e salvamento de dados bem-sucedidos.")
+        else:
+            logging.error("Os dados extraídos não estão no formato esperado. Esperado: lista de dicionários.")
 
-    # Extrai os dados de medalhas
-    medal_data, extract_error = extract_medal_data(html_content)
-    if extract_error:
-        return Response(extract_error, status=404)
-
-    # Salva os dados em um arquivo CSV
-    csv_error = save_to_csv(medal_data)
-    if csv_error:
-        return Response(csv_error, status=500)
-
-    # Retorna o arquivo CSV para download
-    return send_file('medal_data.csv', as_attachment=True)
+    if not os.path.exists('medal_data.csv'):
+        return Response("Arquivo CSV não encontrado.", status=404)
+    else:
+        return send_file('medal_data.csv', as_attachment=True)
 
 if __name__ == '__main__':
     logging.info("Iniciando o servidor Flask...")

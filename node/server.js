@@ -5,10 +5,30 @@ const path = require('path');
 const expressJson = require('express').json;
 const { Telegraf } = require('telegraf');
 const csv = require('csv-parser');
+const winston = require('winston');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Configurando o logger
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.combine(
+        winston.format.timestamp({
+            format: 'YYYY-MM-DD HH:mm:ss'
+        }),
+        winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
+    ),
+    transports: [
+        new winston.transports.File({ filename: path.join(__dirname, 'logs', 'combined.log') })
+    ],
+});
+
+// Verifica e cria a pasta de logs, se necessário
+if (!fs.existsSync(path.join(__dirname, 'logs'))) {
+    fs.mkdirSync(path.join(__dirname, 'logs'));
+}
 
 // Caminho para o arquivo CSV que contém os dados das medalhas
 const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
@@ -42,7 +62,7 @@ function loadSubscribedChats() {
         const data = fs.readFileSync(FILE_PATH_SUBSCRIBED, 'utf8');
         return JSON.parse(data);
     } catch (err) {
-        console.error('Erro ao carregar o arquivo JSON:', err);
+        logger.error(`Erro ao carregar o arquivo JSON: ${err.message}`);
         return [];
     }
 }
@@ -52,7 +72,7 @@ function saveSubscribedChats(subscribedChats) {
     try {
         fs.writeFileSync(FILE_PATH_SUBSCRIBED, JSON.stringify(subscribedChats, null, 2), 'utf8');
     } catch (err) {
-        console.error('Erro ao salvar no arquivo JSON:', err);
+        logger.error(`Erro ao salvar no arquivo JSON: ${err.message}`);
     }
 }
 
@@ -79,15 +99,19 @@ bot.on('text', (ctx) => {
             subscribedChats.push(chatId);
             saveSubscribedChats(subscribedChats); // Salva no arquivo JSON
             ctx.reply('Você foi inscrito com sucesso para receber notificações!');
+            logger.info(`Chat ${chatId} inscrito para notificações.`);
         } else {
             ctx.reply('Você já está inscrito para receber notificações.');
+            logger.info(`Chat ${chatId} já estava inscrito para notificações.`);
         }
     } else if (message === '2') {
         subscribedChats = subscribedChats.filter(id => id !== chatId);
         saveSubscribedChats(subscribedChats); // Salva no arquivo JSON
         ctx.reply('Você foi removido da lista de notificações.');
+        logger.info(`Chat ${chatId} removido da lista de notificações.`);
     } else {
         ctx.reply(servicesList);
+        logger.info(`Chat ${chatId} enviou uma mensagem não reconhecida: ${message}`);
     }
 });
 
@@ -99,7 +123,7 @@ bot.launch();
 
 app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index.html'));
-    console.log('Quadro de medalhas atualizado!');
+    logger.info('Quadro de medalhas atualizado!');
 });
 
 app.get('/notify', (req, res) => {
@@ -113,6 +137,7 @@ app.post('/api/events', async (req, res) => {
     events.push(newEvent);
     saveEvents(events);
     res.status(201).send('Evento cadastrado com sucesso!');
+    logger.info(`Novo evento cadastrado: ${JSON.stringify(newEvent)}`);
 });
 
 app.get('/data', async (req, res) => {
@@ -123,12 +148,15 @@ app.get('/data', async (req, res) => {
             .on('data', (data) => results.push(data))
             .on('end', () => {
                 res.json(results);
+                logger.info('Dados do CSV enviados com sucesso.');
             })
             .on('error', (err) => {
                 res.status(500).json({ error: err.message });
+                logger.error(`Erro ao processar o CSV: ${err.message}`);
             });
     } catch (err) {
         res.status(500).send(err.message);
+        logger.error(`Erro ao carregar os dados: ${err.message}`);
     }
 });
 
@@ -151,10 +179,11 @@ async function checkForMedalUpdates() {
                 for (const chatId of subscribedChats) {
                     bot.telegram.sendMessage(chatId, message);
                 }
+                logger.info(message);
             }
         }
     } catch (err) {
-        console.error('Erro ao atualizar o quadro de medalhas:', err);
+        logger.error(`Erro ao atualizar o quadro de medalhas: ${err.message}`);
     }
 }
 
@@ -174,6 +203,7 @@ function getMedalData() {
             };
         }).filter(d => d.country);
     } catch (err) {
+        logger.error(`Erro ao processar o arquivo CSV: ${err.message}`);
         throw new Error(`Erro ao processar o arquivo CSV: ${err.message}`);
     }
 }
@@ -188,29 +218,27 @@ async function downloadAndSaveCsv() {
         return new Promise((resolve, reject) => {
             response.data.pipe(writer);
             writer.on('finish', () => {
-                console.log('Arquivo CSV salvo com sucesso!');
                 resolve();
             });
             writer.on('error', (err) => {
-                console.error('Erro ao salvar o arquivo:', err);
+                logger.error(`Erro ao salvar o arquivo: ${err.message}`);
                 reject(err);
             });
         });
     } catch (err) {
         if (err.response) {
-            console.error(`Erro ao baixar o arquivo CSV: ${err.message}. Status Code: ${err.response.status}. URL: ${err.config.url}`);
+            logger.error(`Erro ao baixar o arquivo CSV: ${err.message}. Status Code: ${err.response.status}. URL: ${err.config.url}`);
         } else if (err.request) {
-            console.error(`Erro na requisição ao baixar o arquivo CSV: ${err.message}. Nenhuma resposta recebida.`);
+            logger.error(`Erro na requisição ao baixar o arquivo CSV: ${err.message}. Nenhuma resposta recebida.`);
         } else {
-            console.error(`Erro inesperado ao baixar o arquivo CSV: ${err.message}`);
+            logger.error(`Erro inesperado ao baixar o arquivo CSV: ${err.message}`);
         }
         throw new Error(`Erro ao baixar o arquivo CSV: ${err.message}`);
     }
 }
 
-setInterval(checkForMedalUpdates, 30000);    // Verifica a cada 30 segundos
+setInterval(checkForMedalUpdates, 30000); // Verifica a cada 30 segundos
 
 app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
+    logger.info(`Servidor rodando na porta ${port}`);
 });
-
