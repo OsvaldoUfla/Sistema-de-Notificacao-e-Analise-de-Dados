@@ -1,5 +1,13 @@
 # Dockerfile para o servidor Node.js
-FROM node:14
+FROM node:lts
+
+# Instalar dependências necessárias para o canvas
+RUN apt-get update && apt-get install -y \
+    libcairo2-dev \
+    libjpeg-dev \
+    libpango1.0-dev \
+    libgif-dev \
+    build-essential
 
 # Criar diretório de trabalho
 WORKDIR /app

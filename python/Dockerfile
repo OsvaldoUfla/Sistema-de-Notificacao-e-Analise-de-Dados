@@ -13,12 +13,6 @@ RUN pip3 install requests beautifulsoup4 flask make_response
 # Criar diretório de trabalho
 WORKDIR /app
 
-# Copiar código do aplicativo
-COPY . .
-
-# tornar o script de scraping executável
-RUN chmod +x scrape.sh
-
 # Expor a porta em que o servidor estará ouvindo
 EXPOSE 5000
 

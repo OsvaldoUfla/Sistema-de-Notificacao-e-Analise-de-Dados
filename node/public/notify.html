@@ -3,49 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de Evento</title>
+    <title>Cadastro de Notificações</title>
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <h1>Cadastro de Evento de Notificação</h1>
+    <h1>Cadastro de Notificações de Medalhas</h1>
 
-    <p>Preencha o formulário abaixo para cadastrar um evento de notificação. Sempre que qualquer país ganhar uma nova medalha, você receberá uma notificação por e-mail.</p>
+    <p>Para se cadastrar no sistema de notificações de medalhas das Olimpíadas, siga as instruções abaixo:</p>
+    
+    <ol>
+        <li>Clique no link: <a href="https://t.me/NotificacaoOlimpiadas_bot" target="_blank">Notificação Olímpica Bot</a> ou escaneie o QR Code abaixo.</li>
+        <li>Você será redirecionado para uma conversa com o bot de notificações.</li>
+        <li>Basta enviar uma mensagem ao bot e ele responderá com orientações para o cadastro no sistema.</li>
+    </ol>
 
-    <form id="eventForm">
-        <label for="notificationDetail">E-mail:</label>
-        <input type="email" id="notificationDetail" name="notificationDetail" placeholder="Seu e-mail" required>
-
-        <button type="submit">Cadastrar</button>
-    </form>
+    <img src="/QRCode.jpg" alt="QR Code para o bot de notificações">
 
     <button onclick="window.location.href='/'">Voltar para a Página Inicial</button>
-
-    <script>
-        document.getElementById('eventForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const data = {
-                notificationType: 'email',
-                notificationDetail: formData.get('notificationDetail')
-            };
-            try {
-                const response = await fetch('/api/events', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-                if (response.ok) {
-                    alert('Evento cadastrado com sucesso!');
-                } else {
-                    alert('Erro ao cadastrar evento.');
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao cadastrar evento.');
-            }
-        });
-    </script>
 </body>
 </html>
