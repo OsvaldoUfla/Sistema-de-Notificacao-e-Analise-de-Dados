@@ -6,17 +6,18 @@ const expressJson = require('express').json;
 const { Telegraf } = require('telegraf');
 const csv = require('csv-parser');
 const winston = require('winston');
+const moment = require('moment-timezone');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configurando o logger
+// Configuração do logger
 const logger = winston.createLogger({
     level: 'info',
     format: winston.format.combine(
         winston.format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss'
+            format: () => moment().tz('America/Sao_Paulo').format('YYYY-MM-DD HH:mm:ss')
         }),
         winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
     ),
@@ -30,8 +31,9 @@ if (!fs.existsSync(path.join(__dirname, 'logs'))) {
     fs.mkdirSync(path.join(__dirname, 'logs'));
 }
 
-// Caminho para o arquivo CSV que contém os dados das medalhas
-const filePath = path.join(__dirname, 'uploads', 'downloaded.csv');
+// Definição de caminhos e criação de pastas se necessário
+const FILE_PATH_SUBSCRIBED = path.join(__dirname, 'subscribedChats.json'); // Caminho para o arquivo JSON que armazena os chats inscritos
+const filePathCsv = path.join(__dirname, 'uploads', 'downloaded.csv');
 
 // Verifica e cria a pasta de uploads, se necessário
 if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
@@ -41,15 +43,8 @@ if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressJson());
 
-//====================================================================================================
-// BOT TELEGRAM
-
-const bot = new Telegraf(process.env.BOT_TOKEN);
-
-const FILE_PATH_SUBSCRIBED = path.join(__dirname, 'subscribedChats.json'); // Caminho para o arquivo JSON que armazena os chats inscritos
-
 // Função para verificar e criar o arquivo JSON se não existir
-function ensureFileExists() {
+function ensureSubscribedExists() {
     if (!fs.existsSync(FILE_PATH_SUBSCRIBED)) {
         fs.writeFileSync(FILE_PATH_SUBSCRIBED, JSON.stringify([], null, 2), 'utf8');
     }
@@ -58,7 +53,7 @@ function ensureFileExists() {
 // Função para carregar os IDs das conversas do arquivo JSON
 function loadSubscribedChats() {
     try {
-        ensureFileExists(); // Garante que o arquivo exista
+        ensureSubscribedExists(); // Garante que o arquivo exista
         const data = fs.readFileSync(FILE_PATH_SUBSCRIBED, 'utf8');
         return JSON.parse(data);
     } catch (err) {
@@ -78,6 +73,9 @@ function saveSubscribedChats(subscribedChats) {
 
 let subscribedChats = loadSubscribedChats();
 
+const bot = new Telegraf(process.env.BOT_TOKEN);
+
+// Funções do bot
 bot.start((ctx) => ctx.reply('Bem-vindo! Como posso ajudar você hoje?'));
 bot.help((ctx) => ctx.reply('Envie-me um sticker'));
 
@@ -99,16 +97,13 @@ bot.on('text', (ctx) => {
             subscribedChats.push(chatId);
             saveSubscribedChats(subscribedChats); // Salva no arquivo JSON
             ctx.reply('Você foi inscrito com sucesso para receber notificações!');
-            logger.info(`Chat ${chatId} inscrito para notificações.`);
         } else {
             ctx.reply('Você já está inscrito para receber notificações.');
-            logger.info(`Chat ${chatId} já estava inscrito para notificações.`);
         }
     } else if (message === '2') {
         subscribedChats = subscribedChats.filter(id => id !== chatId);
         saveSubscribedChats(subscribedChats); // Salva no arquivo JSON
         ctx.reply('Você foi removido da lista de notificações.');
-        logger.info(`Chat ${chatId} removido da lista de notificações.`);
     } else {
         ctx.reply(servicesList);
         logger.info(`Chat ${chatId} enviou uma mensagem não reconhecida: ${message}`);
@@ -123,7 +118,6 @@ bot.launch();
 
 app.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public/index.html'));
-    logger.info('Quadro de medalhas atualizado!');
 });
 
 app.get('/notify', (req, res) => {
@@ -137,18 +131,17 @@ app.post('/api/events', async (req, res) => {
     events.push(newEvent);
     saveEvents(events);
     res.status(201).send('Evento cadastrado com sucesso!');
-    logger.info(`Novo evento cadastrado: ${JSON.stringify(newEvent)}`);
 });
 
 app.get('/data', async (req, res) => {
+    ensureCvsExists(filePathCsv);
     const results = [];
     try {
-        fs.createReadStream(filePath)
+        fs.createReadStream(filePathCsv)
             .pipe(csv())
             .on('data', (data) => results.push(data))
             .on('end', () => {
                 res.json(results);
-                logger.info('Dados do CSV enviados com sucesso.');
             })
             .on('error', (err) => {
                 res.status(500).json({ error: err.message });
@@ -187,10 +180,25 @@ async function checkForMedalUpdates() {
     }
 }
 
+// Função que garante que o arquivo CSV exista
+function ensureCvsExists(filePathCsv) {
+    // Verifica se o arquivo CSV existe, se não existir, cria um novo
+    if (!fs.existsSync(filePathCsv)) {
+        // Define o cabeçalho do arquivo CSV
+        const header = 'posicao,country,gold,silver,bronze,total\n';
+            
+        // Cria um arquivo CSV com o cabeçalho
+        fs.writeFileSync(filePathCsv, header, 'utf8');
+        logger.info(`Arquivo CSV criado com cabeçalhos padrão: ${filePathCsv}`);
+    }
+}
+
 // Função para carregar a quantidade de medalhas de cada país a partir do arquivo CSV
 function getMedalData() {
+    ensureCvsExists(filePathCsv);
+    // Lê o arquivo CSV e retorna os dados
     try {
-        const data = fs.readFileSync(filePath, 'utf-8');
+        const data = fs.readFileSync(filePathCsv, 'utf-8');
         const lines = data.split('\n').slice(1);
         return lines.map(line => {
             const [posicao, country, gold, silver, bronze, total] = line.split(',');
@@ -213,7 +221,7 @@ async function downloadAndSaveCsv() {
     try {
         const response = await axios.get(process.env.CSV_URL || 'http://python-server-container:5000/download_csv', { responseType: 'stream' });
 
-        const writer = fs.createWriteStream(filePath);
+        const writer = fs.createWriteStream(filePathCsv);
 
         return new Promise((resolve, reject) => {
             response.data.pipe(writer);
@@ -240,5 +248,6 @@ async function downloadAndSaveCsv() {
 setInterval(checkForMedalUpdates, 30000); // Verifica a cada 30 segundos
 
 app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
     logger.info(`Servidor rodando na porta ${port}`);
 });
